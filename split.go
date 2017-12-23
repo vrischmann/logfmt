@@ -1,4 +1,4 @@
-package lgrep
+package logfmt
 
 import (
 	"bytes"
@@ -6,13 +6,6 @@ import (
 	"strconv"
 	"strings"
 )
-
-type Pair struct {
-	Key   string
-	Value string
-}
-
-type Pairs []Pair
 
 func Split(line string) Pairs {
 	parser := newPairParser()

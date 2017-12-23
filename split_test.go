@@ -1,4 +1,4 @@
-package lgrep
+package logfmt
 
 import (
 	"testing"
