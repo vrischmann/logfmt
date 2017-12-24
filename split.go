@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// Split splits a line and produces key-value pairs.
+// Split splits a log line according to the logfmt rules and produces key-value pairs.
 //
 // It correctly handles double-quoted values.
 func Split(line string) Pairs {
