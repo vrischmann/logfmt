@@ -57,28 +57,34 @@ func (q queries) Match(line string) bool {
 	return true
 }
 
+const (
+	regexOperator  = "=~"
+	fuzzyOperator  = "~"
+	strictOperator = "="
+)
+
 func extractQueries(args []string) queries {
 	var res queries
 
 	for _, arg := range args {
 		switch {
-		case strings.Contains(arg, "~="):
-			tokens := strings.Split(arg, "~=")
+		case strings.Contains(arg, regexOperator):
+			tokens := strings.Split(arg, regexOperator)
 			res = append(res, query{
 				key:    tokens[0],
 				regexp: regexp.MustCompile(tokens[1]),
 			})
 
-		case strings.Contains(arg, "~"):
-			tokens := strings.Split(arg, "~")
+		case strings.Contains(arg, fuzzyOperator):
+			tokens := strings.Split(arg, fuzzyOperator)
 			res = append(res, query{
 				key:   tokens[0],
 				value: tokens[1],
 				fuzzy: true,
 			})
 
-		case strings.Contains(arg, "="):
-			tokens := strings.Split(arg, "=")
+		case strings.Contains(arg, strictOperator):
+			tokens := strings.Split(arg, strictOperator)
 			res = append(res, query{
 				key:   tokens[0],
 				value: tokens[1],
