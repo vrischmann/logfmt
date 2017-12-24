@@ -25,9 +25,10 @@ For example, you might want to match on a single key, or the value is usually qu
 
 It would work something like this:
 
-    lgrep foo=bar foo=baz file.log	// implicit OR matches. Matches are strict.
-    lgrep foo~bar file.log		// fuzzy matching.
-    lgrep -v foo=bar			// like grep, -v reverses the matching.
+    lgrep foo=bar foo=baz file.log  // implicit OR matches. Matches are strict.
+    lgrep foo~bar file.log          // fuzzy matching.
+    lgrep foo~=bar file.log         // regex matching.
+    lgrep -v foo=bar                // like grep, -v reverses the matching.
 
 ### lcut
 
@@ -37,5 +38,5 @@ Useful to unclutter logs for example.
 
 It would work something like this:
 
-    lcut foo bar baz file.log		// implicit AND. Removes all 3 fields.
-    lcut -v foo file.log		// reverses the matching, meaning only foo will be left in the fields.
+    lcut foo bar baz file.log      // implicit AND. Removes all 3 fields.
+    lcut -v foo file.log           // reverses the matching, meaning only foo will be left in the fields.
