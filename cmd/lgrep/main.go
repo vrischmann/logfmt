@@ -113,9 +113,9 @@ func main() {
 	// determine the input data
 
 	var input io.Reader = os.Stdin
-	if flag.NArg() > 0 {
+	if len(args) > 0 {
 		files := make([]io.Reader, 0, flag.NArg())
-		for _, fileName := range flag.Args() {
+		for _, fileName := range args {
 			f, err := os.Open(fileName)
 			if err != nil {
 				logrus.Fatal(err)
