@@ -84,6 +84,10 @@ func main() {
 
 		pairs = fields.CutFrom(*flReverse, pairs)
 
+		if len(pairs) <= 0 {
+			continue
+		}
+
 		buf = pairs.AppendFormat(buf)
 		buf = append(buf, '\n')
 
