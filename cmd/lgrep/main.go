@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"flag"
+	"fmt"
 	"io"
 	"os"
 	"regexp"
@@ -48,7 +49,16 @@ func (q *query) Match(line string) bool {
 
 type queries []query
 
-func (q queries) Match(line string) bool {
+func (q queries) Match(or bool, line string) bool {
+	if or {
+		for _, qry := range q {
+			if qry.Match(line) {
+				return true
+			}
+		}
+		return false
+	}
+
 	for _, qry := range q {
 		if !qry.Match(line) {
 			return false
@@ -99,9 +109,26 @@ func extractQueries(args []string) queries {
 	return res
 }
 
+func init() {
+	flag.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage of lgrep: lgrep [OPTION]... QUERY... [FILE]...")
+		fmt.Fprintln(os.Stderr, "Search for QUERY in each FILE.")
+		fmt.Fprintln(os.Stderr, "Multiple files are allowed. If no files, search from stdin.")
+		fmt.Fprintln(os.Stderr, "QUERY must be in one of these form:")
+		fmt.Fprintln(os.Stderr, "  city=Lyon                      for a strict match. Will only match lines which have the `city` key with the value Lyon")
+		fmt.Fprintln(os.Stderr, "  city~New                       for a fuzzy match. Will match lines which have the `city` key with any value contaning New")
+		fmt.Fprintln(os.Stderr, "  city=~(Paris|Lyon|San [a-z]+)  for a regexp match. Will match lines which have the `city` key and for which the regexp matches the value")
+		fmt.Fprintln(os.Stderr, "You can have multiple queries. By default it will work as an AND, you can treat them as a OR with the -or option.\n")
+		fmt.Fprintln(os.Stderr, "Available options:")
+
+		flag.PrintDefaults()
+	}
+}
+
 func main() {
 	var (
 		flReverse = flag.Bool("v", false, "Reverse matches")
+		flOr      = flag.Bool("or", false, "Treat multiple queries as a OR instead of an AND")
 	)
 	flag.Parse()
 
@@ -133,7 +160,7 @@ func main() {
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		matches := queries.Match(line)
+		matches := queries.Match(*flOr, line)
 		switch {
 		case matches && !*flReverse:
 			io.WriteString(os.Stdout, line+"\n")

@@ -56,3 +56,44 @@ func TestQueryMatch(t *testing.T) {
 		require.Equal(t, tc.exp, res)
 	}
 }
+
+func TestQueriesMatch(t *testing.T) {
+	testCases := []struct {
+		input string
+		or    bool
+		q     queries
+		exp   bool
+	}{
+		{
+			"foo=bar bar=baz",
+			false,
+			queries{
+				{key: "foo", value: "bar"},
+			},
+			true,
+		},
+		{
+			"foo=bar bar=baz",
+			false,
+			queries{
+				{key: "foo", value: "bar"},
+				{key: "bar", value: "baz"},
+			},
+			true,
+		},
+		{
+			"foo=bar",
+			true,
+			queries{
+				{key: "foo", value: "bar"},
+				{key: "bar", value: "baz"},
+			},
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		res := tc.q.Match(tc.or, tc.input)
+		require.Equal(t, tc.exp, res)
+	}
+}
