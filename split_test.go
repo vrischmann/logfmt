@@ -60,6 +60,8 @@ func BenchmarkSplit(b *testing.B) {
 	}
 }
 
+// If you want to run this, generate a file with this command
+//    go run gen_test_log.go -size 10 -output /tmp/logfmt_benchmark_data.log
 func BenchmarkSplitFile(b *testing.B) {
 	const dataFile = "/tmp/logfmt_benchmark_data.log"
 
