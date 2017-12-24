@@ -13,8 +13,6 @@ Right now you can:
 
 The goal of logfmt is also to provide a couple of tools to easily parse and integrate log data into a Unix shell pipeline.
 
-No tools are currently developed, but the following is what I will do first.
-
 Note this is not a definitive list, it's likely higher-level tools will be added later.
 
 ### lgrep
@@ -27,7 +25,7 @@ It would work something like this:
 
     lgrep foo=bar foo=baz file.log  // implicit OR matches. Matches are strict.
     lgrep foo~bar file.log          // fuzzy matching.
-    lgrep foo~=bar file.log         // regex matching.
+    lgrep foo=~bar file.log         // regex matching.
     lgrep -v foo=bar                // like grep, -v reverses the matching.
 
 ### lcut
