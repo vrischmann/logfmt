@@ -7,6 +7,9 @@ import (
 	"strings"
 )
 
+// Split splits a line and produces key-value pairs.
+//
+// It correctly handles double-quoted values.
 func Split(line string) Pairs {
 	parser := newPairParser()
 	parser.rd.Reset(line)
