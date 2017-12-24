@@ -18,10 +18,12 @@ type query struct {
 	value  string
 	fuzzy  bool
 	regexp *regexp.Regexp
+
+	parser logfmt.PairParser
 }
 
 func (q *query) Match(line string) bool {
-	pairs := logfmt.Split(line)
+	pairs := q.parser.Split(line)
 
 	var pair logfmt.Pair
 	for _, v := range pairs {
