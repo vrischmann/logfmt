@@ -8,13 +8,33 @@ import (
 )
 
 // Split splits a log line according to the logfmt rules and produces key-value pairs.
+// It is a convenience function which does the same as PairParser.Split(line).
+func Split(line string) Pairs {
+	var parser PairParser
+	return parser.Split(line)
+}
+
+// PairParser is a parser of key-value pairs. It parses a logline according to the logfmt rules.
+type PairParser struct {
+	rd  *strings.Reader
+	buf *bytes.Buffer
+
+	pairs       Pairs
+	currentPair Pair
+}
+
+// Split splits a log line according to the logfmt rules and produces key-value pairs.
 //
 // It correctly handles double-quoted values.
-func Split(line string) Pairs {
-	parser := newPairParser()
-	parser.rd.Reset(line)
+func (p *PairParser) Split(line string) Pairs {
+	if p.rd == nil {
+		p.rd = new(strings.Reader)
+		p.buf = new(bytes.Buffer)
+	}
 
-	fn := parser.readKey
+	p.rd.Reset(line)
+
+	fn := p.readKey
 
 	for {
 		nextFn := fn()
@@ -25,27 +45,12 @@ func Split(line string) Pairs {
 		fn = nextFn
 	}
 
-	return parser.pairs
-}
-
-type pairParser struct {
-	rd  *strings.Reader
-	buf *bytes.Buffer
-
-	pairs       Pairs
-	currentPair Pair
-}
-
-func newPairParser() *pairParser {
-	return &pairParser{
-		rd:  new(strings.Reader),
-		buf: new(bytes.Buffer),
-	}
+	return p.pairs
 }
 
 type stateFn func() stateFn
 
-func (p *pairParser) maybeMoveBufToValue(unquote bool) {
+func (p *PairParser) maybeMoveBufToValue(unquote bool) {
 	if p.buf.Len() > 0 {
 		p.currentPair.Value = p.buf.String()
 		if unquote {
@@ -55,7 +60,7 @@ func (p *pairParser) maybeMoveBufToValue(unquote bool) {
 	}
 }
 
-func (p *pairParser) readKey() stateFn {
+func (p *PairParser) readKey() stateFn {
 	p.consumeWhitespace()
 
 	p.currentPair.Key = ""
@@ -76,7 +81,7 @@ func (p *pairParser) readKey() stateFn {
 	}
 }
 
-func (p *pairParser) readValue() stateFn {
+func (p *PairParser) readValue() stateFn {
 	p.consumeWhitespace()
 
 	p.buf.Reset()
@@ -100,7 +105,7 @@ func (p *pairParser) readValue() stateFn {
 
 // readQuotedValue reads a value that is double-quoted.
 // Leverages https://golang.org/pkg/strconv/#Unquote.
-func (p *pairParser) readQuotedValue() stateFn {
+func (p *PairParser) readQuotedValue() stateFn {
 	p.buf.Reset()
 
 	p.buf.WriteRune('"')
@@ -135,7 +140,7 @@ loop:
 
 var eof = rune(0)
 
-func (p *pairParser) readRune() rune {
+func (p *PairParser) readRune() rune {
 	ch, _, err := p.rd.ReadRune()
 	switch {
 	case err == io.EOF:
@@ -145,7 +150,7 @@ func (p *pairParser) readRune() rune {
 	}
 }
 
-func (p *pairParser) consumeWhitespace() {
+func (p *PairParser) consumeWhitespace() {
 	for {
 		ch := p.readRune()
 		if ch != ' ' {

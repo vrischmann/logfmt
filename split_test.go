@@ -52,8 +52,9 @@ func TestSplit(t *testing.T) {
 func BenchmarkSplit(b *testing.B) {
 	const line = `city=Lyon name=Vincent age=123 latitude=0.2982902490 longitude=95.2023904 str="foo bar baz" json="{\"Foo\":\"foo\",\"Bar\":\"bar\",\"Baz\":{\"A\":12,\"B\":4540,\"C\":{\"Opened\":true}}}"`
 
+	var parser PairParser
 	for i := 0; i < b.N; i++ {
-		pairs := Split(line)
+		pairs := parser.Split(line)
 		if len(pairs) <= 0 {
 			b.Fatal("should have at least one pair")
 		}
@@ -73,6 +74,7 @@ func BenchmarkSplitFile(b *testing.B) {
 
 	b.ResetTimer()
 
+	var parser PairParser
 	for i := 0; i < b.N; i++ {
 		_, err := f.Seek(0, os.SEEK_SET)
 		require.NoError(b, err)
@@ -80,7 +82,7 @@ func BenchmarkSplitFile(b *testing.B) {
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
 			line := scanner.Text()
-			pairs := Split(line)
+			pairs := parser.Split(line)
 			if len(pairs) <= 0 {
 				b.Fatal("should have at least one pair")
 			}
