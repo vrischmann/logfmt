@@ -118,7 +118,7 @@ func init() {
 		fmt.Fprintln(os.Stderr, "  city=Lyon                      for a strict match. Will only match lines which have the `city` key with the value Lyon")
 		fmt.Fprintln(os.Stderr, "  city~New                       for a fuzzy match. Will match lines which have the `city` key with any value contaning New")
 		fmt.Fprintln(os.Stderr, "  city=~(Paris|Lyon|San [a-z]+)  for a regexp match. Will match lines which have the `city` key and for which the regexp matches the value")
-		fmt.Fprintln(os.Stderr, "You can have multiple queries. By default it will work as an AND, you can treat them as a OR with the -or option.\n")
+		fmt.Fprint(os.Stderr, "You can have multiple queries. By default it will work as an AND, you can treat them as a OR with the -or option.\n\n")
 		fmt.Fprintln(os.Stderr, "Available options:")
 
 		flag.PrintDefaults()
