@@ -136,9 +136,9 @@ func main() {
 		matches := queries.Match(line)
 		switch {
 		case matches && !*flReverse:
-			io.WriteString(os.Stdout, line)
+			io.WriteString(os.Stdout, line+"\n")
 		case !matches && *flReverse:
-			io.WriteString(os.Stdout, line)
+			io.WriteString(os.Stdout, line+"\n")
 		}
 	}
 }
