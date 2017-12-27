@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 func isGzip(r io.Reader) (bool, error) {
@@ -53,23 +54,57 @@ func getReader(filename string) (io.Reader, error) {
 	return f, nil
 }
 
+func gatherFilenames(filename string) ([]string, error) {
+	fi, err := os.Stat(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	if !fi.IsDir() {
+		return []string{filename}, nil
+	}
+
+	files := make([]string, 0, 32)
+	err = filepath.Walk(filename, func(path string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !fi.IsDir() {
+			files = append(files, path)
+		}
+
+		return nil
+	})
+
+	return files, err
+}
+
 // GetInput returns a single Reader concatenating all appropriate sources.
 // If multiples files are provided, it's a reader concatenating every files in the order provided.
 // If no files is provided, the input is the standard input.
+// If a source is a directory, it will be walked to gather all files in its hierarchy.
 //
-// Additionally, this functions takes care of ungzipping files if necessary.
+// Additionally, this function takes care of ungzipping files if necessary.
 func GetInput(args []string) io.Reader {
 	var input io.Reader = os.Stdin
 
 	if len(args) > 0 {
 		readers := make([]io.Reader, 0, len(args))
-		for _, filename := range args {
-			rd, err := getReader(filename)
+		for _, source := range args {
+			filenames, err := gatherFilenames(source)
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			readers = append(readers, rd)
+			for _, filename := range filenames {
+				rd, err := getReader(filename)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				readers = append(readers, rd)
+			}
 		}
 
 		input = io.MultiReader(readers...)

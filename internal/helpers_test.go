@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -39,7 +40,7 @@ func TestGetReader(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		filename := mkFile(t, tc.data, tc.mkgzip)
+		filename := mkFile(t, "", "logfmt", tc.data, tc.mkgzip)
 
 		rd, err := getReader(filename)
 		require.NoError(t, err)
@@ -58,10 +59,10 @@ func TestGetReader(t *testing.T) {
 	}
 }
 
-func mkFile(t *testing.T, data string, mkgzip bool) string {
+func mkFile(t *testing.T, dir, prefix string, data string, mkgzip bool) string {
 	t.Helper()
 
-	f, err := ioutil.TempFile("", "logfmt")
+	f, err := ioutil.TempFile(dir, prefix)
 	require.NoError(t, err)
 	defer f.Close()
 
@@ -82,13 +83,34 @@ func mkFile(t *testing.T, data string, mkgzip bool) string {
 
 func TestGetInput(t *testing.T) {
 	filenames := []string{
-		mkFile(t, "foobar1", false),
-		mkFile(t, "foobar2", true),
-		mkFile(t, "foobar3", false),
-		mkFile(t, "foobar4", true),
+		mkFile(t, "", "logfmt", "foobar1", false),
+		mkFile(t, "", "logfmt", "foobar2", true),
+		mkFile(t, "", "logfmt", "foobar3", false),
+		mkFile(t, "", "logfmt", "foobar4", true),
 	}
 
 	input := GetInput(filenames)
+
+	const exp = "foobar1foobar2foobar3foobar4"
+
+	data, err := ioutil.ReadAll(input)
+	require.NoError(t, err)
+	require.Equal(t, exp, string(data))
+}
+
+func TestGetInputDirectory(t *testing.T) {
+	dir := filepath.Join(os.TempDir(), "logfmt_test")
+	require.NoError(t, os.MkdirAll(dir, 0755))
+	defer func() {
+		os.RemoveAll(dir)
+	}()
+
+	mkFile(t, dir, "logfmt1", "foobar1", false)
+	mkFile(t, dir, "logfmt2", "foobar2", true)
+	mkFile(t, dir, "logfmt3", "foobar3", false)
+	mkFile(t, dir, "logfmt4", "foobar4", true)
+
+	input := GetInput([]string{dir})
 
 	const exp = "foobar1foobar2foobar3foobar4"
 
