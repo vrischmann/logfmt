@@ -135,4 +135,7 @@ func main() {
 
 		buf = buf[:0]
 	}
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
 }
