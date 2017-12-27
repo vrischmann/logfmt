@@ -5,12 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"regexp"
 	"strings"
 
 	"github.com/vrischmann/logfmt"
+	"github.com/vrischmann/logfmt/internal"
 )
 
 type query struct {
@@ -141,24 +141,9 @@ func main() {
 	queries := extractQueries(args)
 	args = args[len(queries):]
 
-	// determine the input data
-
-	var input io.Reader = os.Stdin
-	if len(args) > 0 {
-		files := make([]io.Reader, 0, flag.NArg())
-		for _, fileName := range args {
-			f, err := os.Open(fileName)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			files = append(files, f)
-		}
-
-		input = io.MultiReader(files...)
-	}
-
 	//
+
+	input := internal.GetInput(args)
 
 	scanner := bufio.NewScanner(input)
 	for scanner.Scan() {

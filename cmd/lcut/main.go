@@ -3,12 +3,12 @@ package main
 import (
 	"bufio"
 	"flag"
-	"io"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/vrischmann/logfmt"
+	"github.com/vrischmann/logfmt/internal"
 )
 
 type inputFiles []string
@@ -53,26 +53,11 @@ func main() {
 
 	flag.Parse()
 
-	// determine the input data
-
-	var input io.Reader = os.Stdin
-	if len(flInput) > 0 {
-		files := make([]io.Reader, 0, len(flInput))
-		for _, fileName := range flInput {
-			f, err := os.Open(fileName)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			files = append(files, f)
-		}
-
-		input = io.MultiReader(files...)
-	}
-
 	fields := cutFields(flag.Args())
 
 	//
+
+	input := internal.GetInput(flInput)
 
 	var (
 		buf     = make([]byte, 0, 4096)
