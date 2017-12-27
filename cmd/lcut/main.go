@@ -4,10 +4,10 @@ import (
 	"bufio"
 	"flag"
 	"io"
+	"log"
 	"os"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/logfmt"
 )
 
@@ -61,7 +61,7 @@ func main() {
 		for _, fileName := range flInput {
 			f, err := os.Open(fileName)
 			if err != nil {
-				logrus.Fatal(err)
+				log.Fatal(err)
 			}
 
 			files = append(files, f)
@@ -93,7 +93,7 @@ func main() {
 
 		_, err := os.Stdout.Write(buf)
 		if err != nil {
-			logrus.Fatal(err)
+			log.Fatal(err)
 		}
 
 		buf = buf[:0]

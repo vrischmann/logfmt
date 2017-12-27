@@ -5,11 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"regexp"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/logfmt"
 )
 
@@ -149,7 +149,7 @@ func main() {
 		for _, fileName := range args {
 			f, err := os.Open(fileName)
 			if err != nil {
-				logrus.Fatal(err)
+				log.Fatal(err)
 			}
 
 			files = append(files, f)
