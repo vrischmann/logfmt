@@ -60,8 +60,6 @@ func TestGetReader(t *testing.T) {
 }
 
 func mkFile(t *testing.T, dir, prefix string, data string, mkgzip bool) string {
-	t.Helper()
-
 	f, err := ioutil.TempFile(dir, prefix)
 	require.NoError(t, err)
 	defer f.Close()
