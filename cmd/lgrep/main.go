@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"regexp"
 	"strings"
@@ -131,8 +132,9 @@ func init() {
 
 func main() {
 	var (
-		flReverse = flag.Bool("v", false, "Reverse matches")
-		flOr      = flag.Bool("or", false, "Treat multiple queries as a OR instead of an AND")
+		flReverse     = flag.Bool("v", false, "Reverse matches")
+		flOr          = flag.Bool("or", false, "Treat multiple queries as a OR instead of an AND")
+		flMaxLineSize = flag.Int("max-line-size", 1024*1024, "Max size in bytes of a line")
 	)
 	flag.Parse()
 
@@ -146,6 +148,8 @@ func main() {
 	input := internal.GetInput(args)
 
 	scanner := bufio.NewScanner(input)
+	scanner.Buffer(make([]byte, *flMaxLineSize/2), *flMaxLineSize)
+
 	for scanner.Scan() {
 		line := scanner.Text()
 
@@ -156,5 +160,8 @@ func main() {
 		case !matches && *flReverse:
 			io.WriteString(os.Stdout, line+"\n")
 		}
+	}
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
 	}
 }
