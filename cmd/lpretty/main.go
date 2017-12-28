@@ -75,7 +75,7 @@ func (t transforms) Apply(pairs logfmt.Pairs) logfmt.Pairs {
 	return res
 }
 
-const transformOperator = "->"
+const transformOperator = "::"
 
 func extractTransforms(args []string) transforms {
 	var res transforms
