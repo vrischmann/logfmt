@@ -10,6 +10,7 @@ import (
 
 	"github.com/vrischmann/logfmt"
 	"github.com/vrischmann/logfmt/internal"
+	"github.com/vrischmann/logfmt/internal/flags"
 )
 
 type inputFiles []string
@@ -57,13 +58,17 @@ func init() {
 
 func main() {
 	var (
-		flReverse     = flag.Bool("v", false, "Reverse cut: keep only the fields provided")
-		flMaxLineSize = flag.Int("max-line-size", 1024*1024, "Max size in bytes of a line")
-		flInput       inputFiles
+		flReverse = flag.Bool("v", false, "Reverse cut: keep only the fields provided")
+		flInput   inputFiles
 	)
 	flag.Var(&flInput, "i", "The input files. Can be specified multiple times. If no files, read from stdin")
 
 	flag.Parse()
+
+	stopProfiling := internal.StartProfiling(flags.CPUProfile, flags.MemProfile)
+	defer stopProfiling()
+
+	//
 
 	fields := cutFields(flag.Args())
 
@@ -74,7 +79,7 @@ func main() {
 	var buf = make([]byte, 0, 4096)
 
 	scanner := bufio.NewScanner(input)
-	scanner.Buffer(make([]byte, *flMaxLineSize/2), *flMaxLineSize)
+	scanner.Buffer(make([]byte, flags.MaxLineSize/2), flags.MaxLineSize)
 	for scanner.Scan() {
 		line := scanner.Text()
 		pairs := logfmt.Split(line)

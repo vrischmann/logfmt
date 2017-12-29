@@ -12,6 +12,7 @@ import (
 
 	"github.com/vrischmann/logfmt"
 	"github.com/vrischmann/logfmt/internal"
+	"github.com/vrischmann/logfmt/internal/flags"
 )
 
 type query struct {
@@ -137,11 +138,15 @@ func init() {
 
 func main() {
 	var (
-		flReverse     = flag.Bool("v", false, "Reverse matches")
-		flOr          = flag.Bool("or", false, "Treat multiple queries as a OR instead of an AND")
-		flMaxLineSize = flag.Int("max-line-size", 1024*1024, "Max size in bytes of a line")
+		flReverse = flag.Bool("v", false, "Reverse matches")
+		flOr      = flag.Bool("or", false, "Treat multiple queries as a OR instead of an AND")
 	)
 	flag.Parse()
+
+	stopProfiling := internal.StartProfiling(flags.CPUProfile, flags.MemProfile)
+	defer stopProfiling()
+
+	//
 
 	args := flag.Args()
 
@@ -153,7 +158,7 @@ func main() {
 	input := internal.GetInput(args)
 
 	scanner := bufio.NewScanner(input)
-	scanner.Buffer(make([]byte, *flMaxLineSize/2), *flMaxLineSize)
+	scanner.Buffer(make([]byte, flags.MaxLineSize/2), flags.MaxLineSize)
 
 	for scanner.Scan() {
 		line := scanner.Text()
