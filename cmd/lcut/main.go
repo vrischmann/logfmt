@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -44,12 +45,23 @@ func (f cutFields) CutFrom(reverse bool, pairs logfmt.Pairs) logfmt.Pairs {
 	return res
 }
 
+func init() {
+	flag.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage of lcut: lcut [OPTION]... FIELD...")
+		fmt.Fprintln(os.Stderr, "Cut FIELD from each line of the inputs")
+		fmt.Fprintln(os.Stderr, "Multiple fields are allowed. Does nothing if no fields are specified.")
+		fmt.Fprintln(os.Stderr, "Available options:")
+		flag.PrintDefaults()
+	}
+}
+
 func main() {
 	var (
-		flReverse = flag.Bool("v", false, "Reverse matches")
-		flInput   inputFiles
+		flReverse     = flag.Bool("v", false, "Reverse cut: keep only the fields provided")
+		flMaxLineSize = flag.Int("max-line-size", 1024*1024, "Max size in bytes of a line")
+		flInput       inputFiles
 	)
-	flag.Var(&flInput, "i", "The input files")
+	flag.Var(&flInput, "i", "The input files. Can be specified multiple times. If no files, read from stdin")
 
 	flag.Parse()
 
@@ -59,10 +71,10 @@ func main() {
 
 	input := internal.GetInput(flInput)
 
-	var (
-		buf     = make([]byte, 0, 4096)
-		scanner = bufio.NewScanner(input)
-	)
+	var buf = make([]byte, 0, 4096)
+
+	scanner := bufio.NewScanner(input)
+	scanner.Buffer(make([]byte, *flMaxLineSize/2), *flMaxLineSize)
 	for scanner.Scan() {
 		line := scanner.Text()
 		pairs := logfmt.Split(line)
