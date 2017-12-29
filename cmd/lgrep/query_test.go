@@ -2,10 +2,35 @@ package main
 
 import (
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
+
+func BenchmarkQuery(b *testing.B) {
+	q := query{
+		key:   "house",
+		fuzzy: true,
+	}
+
+	b.Run("present", func(b *testing.B) {
+		b.ResetTimer()
+		line := strings.Repeat("house=foobar ", 1000)
+		line = strings.Repeat("foo=bar ", 1000) + line
+		for i := 0; i < b.N; i++ {
+			_ = q.Match(line)
+		}
+	})
+
+	b.Run("not-present", func(b *testing.B) {
+		b.ResetTimer()
+		line := strings.Repeat("foo=bar ", 1000)
+		for i := 0; i < b.N; i++ {
+			_ = q.Match(line)
+		}
+	})
+}
 
 func TestQueryMatch(t *testing.T) {
 	testCases := []struct {
