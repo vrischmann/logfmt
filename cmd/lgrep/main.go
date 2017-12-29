@@ -23,6 +23,7 @@ type query struct {
 
 	keyWithEquals string // used only in the fast failout
 	parser        logfmt.PairParser
+	pairs         logfmt.Pairs
 }
 
 func (q *query) Match(line string) bool {
@@ -31,7 +32,7 @@ func (q *query) Match(line string) bool {
 		return false
 	}
 
-	pairs := q.parser.Split(line)
+	pairs := q.parser.SplitInto(line, q.pairs)
 
 	var pair logfmt.Pair
 	for _, v := range pairs {

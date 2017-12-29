@@ -24,14 +24,20 @@ type PairParser struct {
 }
 
 // Split splits a log line according to the logfmt rules and produces key-value pairs.
-//
-// It correctly handles double-quoted values.
 func (p *PairParser) Split(line string) Pairs {
+	var pairs Pairs
+	return p.SplitInto(line, pairs)
+}
+
+// SplitInto splits a log line according to the logfmt rules and produces key-value pairs.
+// This function appends the pairs to `pairs` and return the slice truncated.
+func (p *PairParser) SplitInto(line string, pairs Pairs) Pairs {
 	if p.rd == nil {
 		p.rd = new(strings.Reader)
 		p.buf = new(bytes.Buffer)
 	}
 
+	p.pairs = pairs[:0]
 	p.rd.Reset(line)
 
 	fn := p.readKey
