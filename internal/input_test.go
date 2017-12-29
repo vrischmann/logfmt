@@ -79,7 +79,7 @@ func mkFile(t *testing.T, dir, prefix string, data string, mkgzip bool) string {
 	return f.Name()
 }
 
-func TestGetInput(t *testing.T) {
+func TestGetInputs(t *testing.T) {
 	filenames := []string{
 		mkFile(t, "", "logfmt", "foobar1", false),
 		mkFile(t, "", "logfmt", "foobar2", true),
@@ -87,13 +87,19 @@ func TestGetInput(t *testing.T) {
 		mkFile(t, "", "logfmt", "foobar4", true),
 	}
 
-	input := GetInput(filenames)
+	inputs := GetInputs(filenames)
 
 	const exp = "foobar1foobar2foobar3foobar4"
 
-	data, err := ioutil.ReadAll(input)
-	require.NoError(t, err)
-	require.Equal(t, exp, string(data))
+	buf := new(bytes.Buffer)
+
+	for _, input := range inputs {
+		data, err := ioutil.ReadAll(input.Reader)
+		require.NoError(t, err)
+		buf.Write(data)
+	}
+
+	require.Equal(t, exp, buf.String())
 }
 
 func TestGetInputDirectory(t *testing.T) {
@@ -108,11 +114,17 @@ func TestGetInputDirectory(t *testing.T) {
 	mkFile(t, dir, "logfmt3", "foobar3", false)
 	mkFile(t, dir, "logfmt4", "foobar4", true)
 
-	input := GetInput([]string{dir})
+	inputs := GetInputs([]string{dir})
 
 	const exp = "foobar1foobar2foobar3foobar4"
 
-	data, err := ioutil.ReadAll(input)
-	require.NoError(t, err)
-	require.Equal(t, exp, string(data))
+	buf := new(bytes.Buffer)
+
+	for _, input := range inputs {
+		data, err := ioutil.ReadAll(input.Reader)
+		require.NoError(t, err)
+		buf.Write(data)
+	}
+
+	require.Equal(t, exp, buf.String())
 }
