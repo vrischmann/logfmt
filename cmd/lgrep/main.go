@@ -24,6 +24,11 @@ type query struct {
 }
 
 func (q *query) Match(line string) bool {
+	// Fast bailout: if the key is not in the line there's no need to parse the line
+	if !strings.Contains(line, q.key) {
+		return false
+	}
+
 	pairs := q.parser.Split(line)
 
 	var pair logfmt.Pair
