@@ -49,6 +49,24 @@ func TestSplit(t *testing.T) {
 	}
 }
 
+func TestSplitInto(t *testing.T) {
+
+	testCases := []string{
+		"city=Lyon name=Vincent age=123",
+		"city=Lyon name=Vincent age=123",
+		"city=Lyon name=Vincent age=123",
+	}
+
+	var (
+		parser PairParser
+		pairs  = make(Pairs, 32)
+	)
+	for _, tc := range testCases {
+		pairs = parser.SplitInto(tc, pairs)
+		require.Equal(t, 3, len(pairs))
+	}
+}
+
 func BenchmarkSplit(b *testing.B) {
 	const line = `city=Lyon name=Vincent age=123 latitude=0.2982902490 longitude=95.2023904 str="foo bar baz" json="{\"Foo\":\"foo\",\"Bar\":\"bar\",\"Baz\":{\"A\":12,\"B\":4540,\"C\":{\"Opened\":true}}}"`
 
