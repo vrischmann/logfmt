@@ -57,7 +57,7 @@ func (q *query) Match(line string) bool {
 	}
 }
 
-type queries []query
+type queries []*query
 
 func (q queries) Match(or bool, line string) bool {
 	if or {
@@ -90,7 +90,7 @@ func extractQueries(args []string) queries {
 		switch {
 		case strings.Contains(arg, regexOperator):
 			tokens := strings.Split(arg, regexOperator)
-			res = append(res, query{
+			res = append(res, &query{
 				key:           tokens[0],
 				keyWithEquals: tokens[0] + "=",
 				regexp:        regexp.MustCompile(tokens[1]),
@@ -98,7 +98,7 @@ func extractQueries(args []string) queries {
 
 		case strings.Contains(arg, fuzzyOperator):
 			tokens := strings.Split(arg, fuzzyOperator)
-			res = append(res, query{
+			res = append(res, &query{
 				key:           tokens[0],
 				keyWithEquals: tokens[0] + "=",
 				value:         tokens[1],
@@ -107,7 +107,7 @@ func extractQueries(args []string) queries {
 
 		case strings.Contains(arg, strictOperator):
 			tokens := strings.Split(arg, strictOperator)
-			res = append(res, query{
+			res = append(res, &query{
 				key:           tokens[0],
 				keyWithEquals: tokens[0] + "=",
 				value:         tokens[1],
