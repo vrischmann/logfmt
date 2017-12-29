@@ -138,8 +138,9 @@ func init() {
 
 func main() {
 	var (
-		flReverse = flag.Bool("v", false, "Reverse matches")
-		flOr      = flag.Bool("or", false, "Treat multiple queries as a OR instead of an AND")
+		flReverse      = flag.Bool("v", false, "Reverse matches")
+		flWithFilename = flag.Bool("with-filename", false, "Display the filename")
+		flOr           = flag.Bool("or", false, "Treat multiple queries as a OR instead of an AND")
 	)
 	flag.Parse()
 
@@ -155,23 +156,31 @@ func main() {
 
 	//
 
-	input := internal.GetInput(args)
+	inputs := internal.GetInputs(args)
 
-	scanner := bufio.NewScanner(input)
-	scanner.Buffer(make([]byte, int(flags.MaxLineSize)/2), int(flags.MaxLineSize))
+	for _, input := range inputs {
+		scanner := bufio.NewScanner(input.Reader)
+		scanner.Buffer(make([]byte, int(flags.MaxLineSize)/2), int(flags.MaxLineSize))
 
-	for scanner.Scan() {
-		line := scanner.Text()
+		for scanner.Scan() {
+			line := scanner.Text()
 
-		matches := queries.Match(*flOr, line)
-		switch {
-		case matches && !*flReverse:
-			io.WriteString(os.Stdout, line+"\n")
-		case !matches && *flReverse:
-			io.WriteString(os.Stdout, line+"\n")
+			matches := queries.Match(*flOr, line)
+
+			if (matches && !*flReverse) || (!matches && *flReverse) {
+				printLine(*flWithFilename, input.Name, line)
+			}
+		}
+		if err := scanner.Err(); err != nil {
+			log.Fatal(err)
 		}
 	}
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
+}
+
+func printLine(withFilename bool, inputName string, line string) {
+	if withFilename {
+		io.WriteString(os.Stdout, inputName+": "+line+"\n")
+	} else {
+		io.WriteString(os.Stdout, line+"\n")
 	}
 }

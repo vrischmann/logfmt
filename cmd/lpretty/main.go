@@ -106,36 +106,35 @@ func main() {
 
 	//
 
-	input := internal.GetInput(args)
+	inputs := internal.GetInputs(args)
 
-	var (
-		buf     = make([]byte, 0, 4096)
-		scanner = bufio.NewScanner(input)
-	)
+	buf := make([]byte, 0, 4096)
+	for _, input := range inputs {
+		scanner := bufio.NewScanner(input.Reader)
+		for scanner.Scan() {
+			line := scanner.Text()
+			pairs := logfmt.Split(line)
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		pairs := logfmt.Split(line)
+			pairs = transforms.Apply(pairs)
 
-		pairs = transforms.Apply(pairs)
+			if len(pairs) <= 0 {
+				continue
+			}
 
-		if len(pairs) <= 0 {
-			continue
+			for _, pair := range pairs {
+				buf = append(buf, []byte(pair.Value)...)
+			}
+			buf = append(buf, '\n')
+
+			_, err := os.Stdout.Write(buf)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			buf = buf[:0]
 		}
-
-		for _, pair := range pairs {
-			buf = append(buf, []byte(pair.Value)...)
-		}
-		buf = append(buf, '\n')
-
-		_, err := os.Stdout.Write(buf)
-		if err != nil {
+		if err := scanner.Err(); err != nil {
 			log.Fatal(err)
 		}
-
-		buf = buf[:0]
-	}
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
 	}
 }

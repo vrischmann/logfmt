@@ -74,33 +74,34 @@ func main() {
 
 	//
 
-	input := internal.GetInput(flInput)
+	inputs := internal.GetInputs(flInput)
 
-	var buf = make([]byte, 0, 4096)
+	buf := make([]byte, 0, 4096)
+	for _, input := range inputs {
+		scanner := bufio.NewScanner(input.Reader)
+		scanner.Buffer(make([]byte, int(flags.MaxLineSize)/2), int(flags.MaxLineSize))
+		for scanner.Scan() {
+			line := scanner.Text()
+			pairs := logfmt.Split(line)
 
-	scanner := bufio.NewScanner(input)
-	scanner.Buffer(make([]byte, int(flags.MaxLineSize)/2), int(flags.MaxLineSize))
-	for scanner.Scan() {
-		line := scanner.Text()
-		pairs := logfmt.Split(line)
+			pairs = fields.CutFrom(*flReverse, pairs)
 
-		pairs = fields.CutFrom(*flReverse, pairs)
+			if len(pairs) <= 0 {
+				continue
+			}
 
-		if len(pairs) <= 0 {
-			continue
+			buf = pairs.AppendFormat(buf)
+			buf = append(buf, '\n')
+
+			_, err := os.Stdout.Write(buf)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			buf = buf[:0]
 		}
-
-		buf = pairs.AppendFormat(buf)
-		buf = append(buf, '\n')
-
-		_, err := os.Stdout.Write(buf)
-		if err != nil {
+		if err := scanner.Err(); err != nil {
 			log.Fatal(err)
 		}
-
-		buf = buf[:0]
-	}
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
 	}
 }
