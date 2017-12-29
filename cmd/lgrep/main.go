@@ -26,6 +26,14 @@ type query struct {
 	pairs         logfmt.Pairs
 }
 
+func newQuery(key string) *query {
+	return &query{
+		key:           key,
+		keyWithEquals: key + "=",
+		pairs:         make(logfmt.Pairs, 64),
+	}
+}
+
 func (q *query) Match(line string) bool {
 	// Fast bailout: if the key is not in the line there's no need to parse the line
 	if !strings.Contains(line, q.keyWithEquals) {
@@ -88,36 +96,31 @@ func extractQueries(args []string) queries {
 	var res queries
 
 	for _, arg := range args {
+		var qry *query
+
 		switch {
 		case strings.Contains(arg, regexOperator):
 			tokens := strings.Split(arg, regexOperator)
-			res = append(res, &query{
-				key:           tokens[0],
-				keyWithEquals: tokens[0] + "=",
-				regexp:        regexp.MustCompile(tokens[1]),
-			})
+			qry = newQuery(tokens[0])
+			qry.regexp = regexp.MustCompile(tokens[1])
 
 		case strings.Contains(arg, fuzzyOperator):
 			tokens := strings.Split(arg, fuzzyOperator)
-			res = append(res, &query{
-				key:           tokens[0],
-				keyWithEquals: tokens[0] + "=",
-				value:         tokens[1],
-				fuzzy:         true,
-			})
+			qry = newQuery(tokens[0])
+			qry.value = tokens[1]
+			qry.fuzzy = true
 
 		case strings.Contains(arg, strictOperator):
 			tokens := strings.Split(arg, strictOperator)
-			res = append(res, &query{
-				key:           tokens[0],
-				keyWithEquals: tokens[0] + "=",
-				value:         tokens[1],
-				fuzzy:         false,
-			})
+			qry = newQuery(tokens[0])
+			qry.value = tokens[1]
+		}
 
-		default:
+		if qry == nil {
 			return res
 		}
+
+		res = append(res, qry)
 	}
 
 	return res
