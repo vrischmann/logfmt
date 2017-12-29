@@ -158,7 +158,7 @@ func main() {
 	input := internal.GetInput(args)
 
 	scanner := bufio.NewScanner(input)
-	scanner.Buffer(make([]byte, flags.MaxLineSize/2), flags.MaxLineSize)
+	scanner.Buffer(make([]byte, int(flags.MaxLineSize)/2), int(flags.MaxLineSize))
 
 	for scanner.Scan() {
 		line := scanner.Text()
