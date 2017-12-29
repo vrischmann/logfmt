@@ -21,12 +21,13 @@ type query struct {
 	fuzzy  bool
 	regexp *regexp.Regexp
 
-	parser logfmt.PairParser
+	keyWithEquals string // used only in the fast failout
+	parser        logfmt.PairParser
 }
 
 func (q *query) Match(line string) bool {
 	// Fast bailout: if the key is not in the line there's no need to parse the line
-	if !strings.Contains(line, q.key) {
+	if !strings.Contains(line, q.keyWithEquals) {
 		return false
 	}
 
@@ -90,24 +91,27 @@ func extractQueries(args []string) queries {
 		case strings.Contains(arg, regexOperator):
 			tokens := strings.Split(arg, regexOperator)
 			res = append(res, query{
-				key:    tokens[0],
-				regexp: regexp.MustCompile(tokens[1]),
+				key:           tokens[0],
+				keyWithEquals: tokens[0] + "=",
+				regexp:        regexp.MustCompile(tokens[1]),
 			})
 
 		case strings.Contains(arg, fuzzyOperator):
 			tokens := strings.Split(arg, fuzzyOperator)
 			res = append(res, query{
-				key:   tokens[0],
-				value: tokens[1],
-				fuzzy: true,
+				key:           tokens[0],
+				keyWithEquals: tokens[0] + "=",
+				value:         tokens[1],
+				fuzzy:         true,
 			})
 
 		case strings.Contains(arg, strictOperator):
 			tokens := strings.Split(arg, strictOperator)
 			res = append(res, query{
-				key:   tokens[0],
-				value: tokens[1],
-				fuzzy: false,
+				key:           tokens[0],
+				keyWithEquals: tokens[0] + "=",
+				value:         tokens[1],
+				fuzzy:         false,
 			})
 
 		default:
