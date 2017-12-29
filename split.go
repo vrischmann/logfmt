@@ -16,8 +16,9 @@ func Split(line string) Pairs {
 
 // PairParser is a parser of key-value pairs. It parses a logline according to the logfmt rules.
 type PairParser struct {
-	rd  *strings.Reader
-	buf *bytes.Buffer
+	rd   *strings.Reader
+	buf  *bytes.Buffer
+	done bool
 
 	pairs       Pairs
 	currentPair Pair
@@ -36,25 +37,17 @@ func (p *PairParser) SplitInto(line string, pairs Pairs) Pairs {
 		p.rd = new(strings.Reader)
 		p.buf = new(bytes.Buffer)
 	}
-
-	p.pairs = pairs[:0]
+	p.done = false
 	p.rd.Reset(line)
+	p.pairs = pairs[:0]
 
-	fn := p.readKey
-
-	for {
-		nextFn := fn()
-		if nextFn == nil {
-			break
-		}
-
-		fn = nextFn
+	for !p.done {
+		p.readKey()
+		p.readValue()
 	}
 
 	return p.pairs
 }
-
-type stateFn func() stateFn
 
 func (p *PairParser) maybeMoveBufToValue(unquote bool) {
 	if p.buf.Len() > 0 {
@@ -66,7 +59,7 @@ func (p *PairParser) maybeMoveBufToValue(unquote bool) {
 	}
 }
 
-func (p *PairParser) readKey() stateFn {
+func (p *PairParser) readKey() {
 	p.consumeWhitespace()
 
 	p.currentPair.Key = ""
@@ -77,17 +70,18 @@ func (p *PairParser) readKey() stateFn {
 		ch := p.readRune()
 		switch ch {
 		case eof:
-			return nil
+			p.done = true
+			return
 		case '=':
 			p.currentPair.Key = p.buf.String()
-			return p.readValue
+			return
 		default:
 			p.buf.WriteRune(ch)
 		}
 	}
 }
 
-func (p *PairParser) readValue() stateFn {
+func (p *PairParser) readValue() {
 	p.consumeWhitespace()
 
 	p.buf.Reset()
@@ -97,12 +91,14 @@ func (p *PairParser) readValue() stateFn {
 		switch ch {
 		case eof:
 			p.maybeMoveBufToValue(false)
-			return nil
+			p.done = true
+			return
 		case ' ':
 			p.maybeMoveBufToValue(false)
-			return p.readKey
+			return
 		case '"':
-			return p.readQuotedValue
+			p.readQuotedValue()
+			return
 		default:
 			p.buf.WriteRune(ch)
 		}
@@ -111,7 +107,7 @@ func (p *PairParser) readValue() stateFn {
 
 // readQuotedValue reads a value that is double-quoted.
 // Leverages https://golang.org/pkg/strconv/#Unquote.
-func (p *PairParser) readQuotedValue() stateFn {
+func (p *PairParser) readQuotedValue() {
 	p.buf.Reset()
 
 	p.buf.WriteRune('"')
@@ -124,7 +120,8 @@ loop:
 		switch ch {
 		case eof:
 			p.maybeMoveBufToValue(false)
-			return nil
+			p.done = true
+			return
 		case '\\':
 			p.buf.WriteRune(ch)
 			ignoreNextQuote = true
@@ -137,7 +134,7 @@ loop:
 
 			p.maybeMoveBufToValue(true)
 
-			return p.readKey
+			return
 		default:
 			p.buf.WriteRune(ch)
 		}
