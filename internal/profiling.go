@@ -28,6 +28,8 @@ func StartProfiling(cpuProfile, memProfile string) func() {
 	}
 
 	return func() {
+		pprof.StopCPUProfile()
+
 		f, err := os.Create(memProfile)
 		if err != nil {
 			logrus.Fatal(err)
