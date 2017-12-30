@@ -7,6 +7,8 @@ import (
 	"io"
 	"log"
 	"os"
+	"reflect"
+	"unsafe"
 
 	"github.com/vrischmann/logfmt/internal"
 	"github.com/vrischmann/logfmt/internal/flags"
@@ -56,8 +58,16 @@ func main() {
 		scanner := bufio.NewScanner(input.Reader)
 		scanner.Buffer(make([]byte, int(flags.MaxLineSize)/2), int(flags.MaxLineSize))
 
+		strHeader := new(reflect.StringHeader)
+
 		for scanner.Scan() {
-			line := scanner.Text()
+			data := scanner.Bytes()
+
+			strHeader.Data = uintptr(unsafe.Pointer(&data[0]))
+			strHeader.Len = len(data)
+
+			line := *(*string)(unsafe.Pointer(strHeader))
+
 			matches := qs.Match(*flOr, line)
 
 			if (matches && !*flReverse) || (!matches && *flReverse) {
