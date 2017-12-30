@@ -1,4 +1,4 @@
-package main
+package lgrep
 
 import (
 	"regexp"
@@ -9,7 +9,7 @@ import (
 )
 
 func BenchmarkQuery(b *testing.B) {
-	q := query{
+	q := Query{
 		key:   "house",
 		fuzzy: true,
 	}
@@ -35,43 +35,43 @@ func BenchmarkQuery(b *testing.B) {
 func TestQueryMatch(t *testing.T) {
 	testCases := []struct {
 		input string
-		qry   query
+		qry   Query
 		exp   bool
 	}{
 		{
 			"foo=bar",
-			query{key: "foo", value: "bar"},
+			Query{key: "foo", value: "bar"},
 			true,
 		},
 		{
 			"foo=abcdefgh",
-			query{key: "foo", value: "def", fuzzy: true},
+			Query{key: "foo", value: "def", fuzzy: true},
 			true,
 		},
 		{
 			"foo=012494585",
-			query{key: "foo", regexp: regexp.MustCompile("[0-9]+")},
+			Query{key: "foo", regexp: regexp.MustCompile("[0-9]+")},
 			true,
 		},
 		// non matches
 		{
 			"foo=bar",
-			query{key: "ab", value: "cd"},
+			Query{key: "ab", value: "cd"},
 			false,
 		},
 		{
 			"foo=ab",
-			query{key: "foo", value: "cd"},
+			Query{key: "foo", value: "cd"},
 			false,
 		},
 		{
 			"foo=paris",
-			query{key: "foo", value: "rd", fuzzy: true},
+			Query{key: "foo", value: "rd", fuzzy: true},
 			false,
 		},
 		{
 			"foo=012494585",
-			query{key: "foo", regexp: regexp.MustCompile("[a-z]+")},
+			Query{key: "foo", regexp: regexp.MustCompile("[a-z]+")},
 			false,
 		},
 	}
@@ -86,13 +86,13 @@ func TestQueriesMatch(t *testing.T) {
 	testCases := []struct {
 		input string
 		or    bool
-		q     queries
+		q     Queries
 		exp   bool
 	}{
 		{
 			"foo=bar bar=baz",
 			false,
-			queries{
+			Queries{
 				{key: "foo", value: "bar"},
 			},
 			true,
@@ -100,7 +100,7 @@ func TestQueriesMatch(t *testing.T) {
 		{
 			"foo=bar bar=baz",
 			false,
-			queries{
+			Queries{
 				{key: "foo", value: "bar"},
 				{key: "bar", value: "baz"},
 			},
@@ -109,7 +109,7 @@ func TestQueriesMatch(t *testing.T) {
 		{
 			"foo=bar",
 			true,
-			queries{
+			Queries{
 				{key: "foo", value: "bar"},
 				{key: "bar", value: "baz"},
 			},
