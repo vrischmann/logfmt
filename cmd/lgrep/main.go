@@ -7,124 +7,11 @@ import (
 	"io"
 	"log"
 	"os"
-	"regexp"
-	"strings"
 
-	"github.com/vrischmann/logfmt"
 	"github.com/vrischmann/logfmt/internal"
 	"github.com/vrischmann/logfmt/internal/flags"
+	"github.com/vrischmann/logfmt/internal/lgrep"
 )
-
-type query struct {
-	key    string
-	value  string
-	fuzzy  bool
-	regexp *regexp.Regexp
-
-	keyWithEquals string // used only in the fast failout
-	parser        logfmt.PairParser
-	pairs         logfmt.Pairs
-}
-
-func newQuery(key string) *query {
-	return &query{
-		key:           key,
-		keyWithEquals: key + "=",
-		pairs:         make(logfmt.Pairs, 64),
-	}
-}
-
-func (q *query) Match(line string) bool {
-	// Fast bailout: if the key is not in the line there's no need to parse the line
-	if !strings.Contains(line, q.keyWithEquals) {
-		return false
-	}
-
-	pairs := q.parser.SplitInto(line, q.pairs)
-
-	var pair logfmt.Pair
-	for _, v := range pairs {
-		if v.Key == q.key {
-			pair = v
-			break
-		}
-	}
-
-	if pair.Key == "" {
-		return false
-	}
-
-	switch {
-	case q.fuzzy:
-		return strings.Contains(pair.Value, q.value)
-
-	case q.regexp != nil:
-		return q.regexp.MatchString(pair.Value)
-
-	default:
-		return pair.Value == q.value
-	}
-}
-
-type queries []*query
-
-func (q queries) Match(or bool, line string) bool {
-	if or {
-		for _, qry := range q {
-			if qry.Match(line) {
-				return true
-			}
-		}
-		return false
-	}
-
-	for _, qry := range q {
-		if !qry.Match(line) {
-			return false
-		}
-	}
-	return true
-}
-
-const (
-	regexOperator  = "=~"
-	fuzzyOperator  = "~"
-	strictOperator = "="
-)
-
-func extractQueries(args []string) queries {
-	var res queries
-
-	for _, arg := range args {
-		var qry *query
-
-		switch {
-		case strings.Contains(arg, regexOperator):
-			tokens := strings.Split(arg, regexOperator)
-			qry = newQuery(tokens[0])
-			qry.regexp = regexp.MustCompile(tokens[1])
-
-		case strings.Contains(arg, fuzzyOperator):
-			tokens := strings.Split(arg, fuzzyOperator)
-			qry = newQuery(tokens[0])
-			qry.value = tokens[1]
-			qry.fuzzy = true
-
-		case strings.Contains(arg, strictOperator):
-			tokens := strings.Split(arg, strictOperator)
-			qry = newQuery(tokens[0])
-			qry.value = tokens[1]
-		}
-
-		if qry == nil {
-			return res
-		}
-
-		res = append(res, qry)
-	}
-
-	return res
-}
 
 func init() {
 	flag.Usage = func() {
@@ -158,9 +45,8 @@ func main() {
 	//
 
 	args := flag.Args()
-
-	queries := extractQueries(args)
-	args = args[len(queries):]
+	qs := lgrep.ExtractQueries(args)
+	args = args[len(qs):]
 
 	//
 
@@ -172,8 +58,7 @@ func main() {
 
 		for scanner.Scan() {
 			line := scanner.Text()
-
-			matches := queries.Match(*flOr, line)
+			matches := qs.Match(*flOr, line)
 
 			if (matches && !*flReverse) || (!matches && *flReverse) {
 				printLine(*flWithFilename, input.Name, line)
