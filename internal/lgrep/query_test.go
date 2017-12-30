@@ -8,28 +8,50 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func BenchmarkQuery(b *testing.B) {
-	q := Query{
-		key:   "house",
-		fuzzy: true,
+func BenchmarkQueryFuzzyPresent(b *testing.B) {
+	q := newQuery("house")
+	q.fuzzy = true
+	line := strings.Repeat("house=foobar ", 1000)
+	line = strings.Repeat("foo=bar ", 1000) + line
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_ = q.Match(line)
 	}
+}
 
-	b.Run("present", func(b *testing.B) {
-		b.ResetTimer()
-		line := strings.Repeat("house=foobar ", 1000)
-		line = strings.Repeat("foo=bar ", 1000) + line
-		for i := 0; i < b.N; i++ {
-			_ = q.Match(line)
-		}
-	})
+func BenchmarkQueryFuzzyNotPresent(b *testing.B) {
+	q := newQuery("house")
+	q.fuzzy = true
+	line := strings.Repeat("foo=bar ", 1000)
 
-	b.Run("not-present", func(b *testing.B) {
-		b.ResetTimer()
-		line := strings.Repeat("foo=bar ", 1000)
-		for i := 0; i < b.N; i++ {
-			_ = q.Match(line)
-		}
-	})
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_ = q.Match(line)
+	}
+}
+
+func BenchmarkQueryNotFuzzyPresent(b *testing.B) {
+	q := newQuery("house")
+	line := strings.Repeat("house=foobar ", 1000)
+	line = strings.Repeat("foo=bar ", 1000) + line
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = q.Match(line)
+	}
+}
+
+func BenchmarkQueryNotFuzzyNotPresent(b *testing.B) {
+	q := newQuery("house")
+	line := strings.Repeat("foo=bar ", 1000)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = q.Match(line)
+	}
 }
 
 func TestQueryMatch(t *testing.T) {
