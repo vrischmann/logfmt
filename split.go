@@ -112,28 +112,25 @@ func (p *PairParser) readQuotedValue() {
 
 	p.buf.WriteRune('"')
 
-	var ignoreNextQuote bool
-
-loop:
 	for {
 		ch := p.readRune()
-		switch ch {
-		case eof:
+		switch {
+		case ch == eof:
 			p.maybeMoveBufToValue(false)
 			p.done = true
 			return
-		case '\\':
-			p.buf.WriteRune(ch)
-			ignoreNextQuote = true
-		case '"':
-			p.buf.WriteRune(ch)
-			if ignoreNextQuote {
-				ignoreNextQuote = false
-				continue loop
+		case ch == '\\':
+			nextCh := p.readRune()
+			switch nextCh {
+			case 'n':
+				// Don't add \n
+			default:
+				p.buf.WriteRune(ch)
+				p.buf.WriteRune(nextCh)
 			}
-
+		case ch == '"':
+			p.buf.WriteRune(ch)
 			p.maybeMoveBufToValue(true)
-
 			return
 		default:
 			p.buf.WriteRune(ch)
