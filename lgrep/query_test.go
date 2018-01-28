@@ -104,16 +104,40 @@ func TestQueryMatch(t *testing.T) {
 	}
 }
 
+func TestQueryMatchKey(t *testing.T) {
+	testCases := []struct {
+		input []string
+		qry   Query
+		exp   bool
+	}{
+		{
+			[]string{"a", "b", "c"},
+			Query{key: "foo"},
+			false,
+		},
+		{
+			[]string{"foo"},
+			Query{key: "foo"},
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		res := tc.qry.MatchKeys(tc.input)
+		require.Equal(t, tc.exp, res)
+	}
+}
+
 func TestQueriesMatch(t *testing.T) {
 	testCases := []struct {
 		input string
-		or    bool
+		opt   *QueryOption
 		q     Queries
 		exp   bool
 	}{
 		{
 			"foo=bar bar=baz",
-			false,
+			nil,
 			Queries{
 				{key: "foo", value: "bar"},
 			},
@@ -121,7 +145,19 @@ func TestQueriesMatch(t *testing.T) {
 		},
 		{
 			"foo=bar bar=baz",
-			false,
+			nil,
+			Queries{
+				{key: "foo", value: "bar"},
+				{key: "bar", value: "baz"},
+			},
+			true,
+		},
+		//
+		{
+			"foo=bar",
+			&QueryOption{
+				Or: true,
+			},
 			Queries{
 				{key: "foo", value: "bar"},
 				{key: "bar", value: "baz"},
@@ -130,17 +166,118 @@ func TestQueriesMatch(t *testing.T) {
 		},
 		{
 			"foo=bar",
-			true,
+			&QueryOption{
+				Or: false,
+			},
 			Queries{
 				{key: "foo", value: "bar"},
 				{key: "bar", value: "baz"},
+			},
+			false,
+		},
+		//
+		{
+			"foo=bar",
+			&QueryOption{
+				Reverse: true,
+			},
+			Queries{
+				{key: "foo", value: "bar"},
+			},
+			false,
+		},
+		{
+			"foo=bar",
+			&QueryOption{
+				Or:      true,
+				Reverse: true,
+			},
+			Queries{
+				{key: "foo", value: "bar"},
+			},
+			false,
+		},
+		{
+			"foo=bar bar=baz",
+			&QueryOption{
+				Reverse: true,
+			},
+			Queries{
+				{key: "foo", value: "bar"},
+			},
+			false,
+		},
+		{
+			"foo=bar bar=baz",
+			&QueryOption{
+				Reverse: true,
+			},
+			Queries{
+				{key: "foo", value: "bar"},
+				{key: "a", value: "b"},
+			},
+			true,
+		},
+		//
+		{
+			"foo=bar bar=baz",
+			&QueryOption{
+				Or: true,
+			},
+			Queries{
+				{key: "b", value: "c"},
+				{key: "a", value: "b"},
+			},
+			false,
+		},
+	}
+
+	for _, tc := range testCases {
+		res := tc.q.Match(tc.input, tc.opt)
+		require.Equal(t, tc.exp, res)
+	}
+}
+
+func TestQueriesMatchKeys(t *testing.T) {
+	testCases := []struct {
+		input []string
+		q     Queries
+		exp   bool
+	}{
+		{
+			[]string{"a", "b", "c"},
+			Queries{
+				{key: "foo"},
+			},
+			false,
+		},
+		{
+			[]string{"foo"},
+			Queries{
+				{key: "foo"},
+			},
+			true,
+		},
+		{
+			[]string{"foo", "bar"},
+			Queries{
+				{key: "foo"},
+				{key: "ba"},
+			},
+			false,
+		},
+		{
+			[]string{"foo", "bar", "abcd"},
+			Queries{
+				{key: "foo"},
+				{key: "bar"},
 			},
 			true,
 		},
 	}
 
 	for _, tc := range testCases {
-		res := tc.q.Match(tc.or, tc.input)
+		res := tc.q.MatchKeys(tc.input)
 		require.Equal(t, tc.exp, res)
 	}
 }
