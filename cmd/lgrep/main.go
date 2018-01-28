@@ -12,7 +12,7 @@ import (
 
 	"github.com/vrischmann/logfmt/internal"
 	"github.com/vrischmann/logfmt/internal/flags"
-	"github.com/vrischmann/logfmt/internal/lgrep"
+	"github.com/vrischmann/logfmt/lgrep"
 )
 
 func init() {

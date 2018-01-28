@@ -40,6 +40,15 @@ func (q *Query) Copy() *Query {
 	return tmp
 }
 
+func (q *Query) MatchKey(keys []string) bool {
+	for _, key := range keys {
+		if key == q.key {
+			return true
+		}
+	}
+	return false
+}
+
 func (q *Query) Match(line string) bool {
 	// Fast bailout: if the key is not in the line there's no need to parse the line
 	if !strings.Contains(line, q.keyWithEquals) {
@@ -80,6 +89,15 @@ func (q Queries) Copy() Queries {
 		tmp[i] = v.Copy()
 	}
 	return tmp
+}
+
+func (q Queries) MatchKeys(keys []string) bool {
+	for _, qry := range q {
+		if qry.MatchKey(keys) {
+			return true
+		}
+	}
+	return false
 }
 
 func (q Queries) Match(or bool, line string) bool {
