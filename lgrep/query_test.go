@@ -241,11 +241,13 @@ func TestQueriesMatch(t *testing.T) {
 func TestQueriesMatchKeys(t *testing.T) {
 	testCases := []struct {
 		input []string
+		opt   *QueryOption
 		q     Queries
 		exp   bool
 	}{
 		{
 			[]string{"a", "b", "c"},
+			nil,
 			Queries{
 				{key: "foo"},
 			},
@@ -253,6 +255,7 @@ func TestQueriesMatchKeys(t *testing.T) {
 		},
 		{
 			[]string{"foo"},
+			nil,
 			Queries{
 				{key: "foo"},
 			},
@@ -260,6 +263,7 @@ func TestQueriesMatchKeys(t *testing.T) {
 		},
 		{
 			[]string{"foo", "bar"},
+			nil,
 			Queries{
 				{key: "foo"},
 				{key: "ba"},
@@ -268,16 +272,38 @@ func TestQueriesMatchKeys(t *testing.T) {
 		},
 		{
 			[]string{"foo", "bar", "abcd"},
+			nil,
 			Queries{
 				{key: "foo"},
 				{key: "bar"},
 			},
 			true,
 		},
+		//
+		{
+			[]string{"a", "b"},
+			&QueryOption{
+				Reverse: true,
+			},
+			Queries{
+				{key: "foo"},
+			},
+			true,
+		},
+		{
+			[]string{"a"},
+			&QueryOption{
+				Reverse: true,
+			},
+			Queries{
+				{key: "a"},
+			},
+			false,
+		},
 	}
 
 	for _, tc := range testCases {
-		res := tc.q.MatchKeys(tc.input)
+		res := tc.q.MatchKeys(tc.input, tc.opt)
 		require.Equal(t, tc.exp, res)
 	}
 }

@@ -91,7 +91,15 @@ func (q Queries) Copy() Queries {
 	return tmp
 }
 
-func (q Queries) MatchKeys(keys []string) bool {
+func (q Queries) MatchKeys(keys []string, opt *QueryOption) bool {
+	if opt != nil && opt.Reverse {
+		return !q.matchKeys(keys)
+	}
+
+	return q.matchKeys(keys)
+}
+
+func (q Queries) matchKeys(keys []string) bool {
 	for _, qry := range q {
 		if !qry.MatchKeys(keys) {
 			return false
