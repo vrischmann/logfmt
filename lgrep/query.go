@@ -40,7 +40,7 @@ func (q *Query) Copy() *Query {
 	return tmp
 }
 
-func (q *Query) MatchKey(keys []string) bool {
+func (q *Query) MatchKeys(keys []string) bool {
 	for _, key := range keys {
 		if key == q.key {
 			return true
@@ -93,29 +93,45 @@ func (q Queries) Copy() Queries {
 
 func (q Queries) MatchKeys(keys []string) bool {
 	for _, qry := range q {
-		if qry.MatchKey(keys) {
-			return true
+		if !qry.MatchKeys(keys) {
+			return false
 		}
 	}
-	return false
+	return true
 }
 
-func (q Queries) Match(or bool, line string) bool {
-	if or {
+type QueryOption struct {
+	Reverse bool
+	Or      bool
+}
+
+func (q Queries) match(line string, opt *QueryOption) bool {
+	switch {
+	case opt != nil && opt.Or:
 		for _, qry := range q {
 			if qry.Match(line) {
 				return true
 			}
 		}
 		return false
+
+	default:
+		res := true
+		for _, qry := range q {
+			if !qry.Match(line) {
+				res = false
+			}
+		}
+		return res
+	}
+}
+
+func (q Queries) Match(line string, opt *QueryOption) bool {
+	if opt != nil && opt.Reverse {
+		return !q.match(line, opt)
 	}
 
-	for _, qry := range q {
-		if !qry.Match(line) {
-			return false
-		}
-	}
-	return true
+	return q.match(line, opt)
 }
 
 const (
