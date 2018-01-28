@@ -54,6 +54,11 @@ func main() {
 
 	inputs := internal.GetInputs(args)
 
+	qryOpt := &lgrep.QueryOption{
+		Or:      *flOr,
+		Reverse: *flReverse,
+	}
+
 	for _, input := range inputs {
 		scanner := bufio.NewScanner(input.Reader)
 		scanner.Buffer(make([]byte, int(flags.MaxLineSize)/2), int(flags.MaxLineSize))
@@ -68,9 +73,7 @@ func main() {
 
 			line := *(*string)(unsafe.Pointer(strHeader))
 
-			matches := qs.Match(*flOr, line)
-
-			if (matches && !*flReverse) || (!matches && *flReverse) {
+			if qs.Match(line, qryOpt) {
 				printLine(*flWithFilename, input.Name, line)
 			}
 		}
