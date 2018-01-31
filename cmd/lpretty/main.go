@@ -19,6 +19,7 @@ type transformType int
 const (
 	jsonTransform          transformType = 1
 	javaExceptionTransform transformType = 2
+	stripKeyTransform      transformType = 3
 )
 
 func transformTypeFromString(s string) transformType {
@@ -64,10 +65,18 @@ type transforms []transform
 
 func (t transforms) Apply(pairs logfmt.Pairs) logfmt.Pairs {
 	res := make(logfmt.Pairs, 0, len(pairs))
-	for _, transform := range t {
+	for _, tr := range t {
+		// When we call lpretty with no arguments we default to a strip key transform on the first pair
+		// This is useful when piping, for example:
+		//   lgrep foo=bar | lcut -v user-id | lpretty > user_ids.csv
+		if tr.typ == stripKeyTransform && tr.key == "" && len(pairs) > 0 {
+			res = append(res, pairs[0])
+			continue
+		}
+
 		for _, pair := range pairs {
-			if pair.Key == transform.key {
-				pair = transform.Apply(pair)
+			if pair.Key == tr.key {
+				pair = tr.Apply(pair)
 				res = append(res, pair)
 			}
 		}
@@ -80,6 +89,13 @@ const transformOperator = "::"
 func extractTransforms(args []string) transforms {
 	var res transforms
 
+	if len(args) == 0 {
+		return transforms{{
+			key: "",
+			typ: stripKeyTransform,
+		}}
+	}
+
 	for _, arg := range args {
 		if strings.Contains(arg, transformOperator) {
 			tokens := strings.Split(arg, transformOperator)
@@ -90,6 +106,11 @@ func extractTransforms(args []string) transforms {
 
 			continue
 		}
+
+		res = append(res, transform{
+			key: arg,
+			typ: stripKeyTransform,
+		})
 
 		break
 	}
@@ -102,7 +123,9 @@ func main() {
 
 	args := flag.Args()
 	transforms := extractTransforms(args)
-	args = args[len(transforms):]
+	if len(args) > 0 {
+		args = args[len(transforms):]
+	}
 
 	//
 
