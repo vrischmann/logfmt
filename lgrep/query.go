@@ -18,16 +18,16 @@ type Query struct {
 	pairs         logfmt.Pairs
 }
 
-func newQuery(key string) *Query {
-	return &Query{
+func newQuery(key string) Query {
+	return Query{
 		key:           key,
 		keyWithEquals: key + "=",
 		pairs:         make(logfmt.Pairs, 64),
 	}
 }
 
-func (q *Query) Copy() *Query {
-	tmp := &Query{
+func (q *Query) Copy() Query {
+	tmp := Query{
 		key:           q.key,
 		keyWithEquals: q.keyWithEquals,
 		value:         q.value,
@@ -57,15 +57,17 @@ func (q *Query) Match(line string) bool {
 
 	pairs := q.parser.SplitInto(line, q.pairs)
 
-	var pair logfmt.Pair
-	for _, v := range pairs {
+	var pair *logfmt.Pair
+	for i := range pairs {
+		v := &pairs[i]
+
 		if v.Key == q.key {
 			pair = v
 			break
 		}
 	}
 
-	if pair.Key == "" {
+	if pair == nil {
 		return false
 	}
 
@@ -81,7 +83,7 @@ func (q *Query) Match(line string) bool {
 	}
 }
 
-type Queries []*Query
+type Queries []Query
 
 func (q Queries) Copy() Queries {
 	tmp := make(Queries, len(q))
@@ -100,7 +102,8 @@ func (q Queries) MatchKeys(keys []string, opt *QueryOption) bool {
 }
 
 func (q Queries) matchKeys(keys []string) bool {
-	for _, qry := range q {
+	for i := range q {
+		qry := &q[i]
 		if !qry.MatchKeys(keys) {
 			return false
 		}
@@ -116,7 +119,8 @@ type QueryOption struct {
 func (q Queries) match(line string, opt *QueryOption) bool {
 	switch {
 	case opt != nil && opt.Or:
-		for _, qry := range q {
+		for i := range q {
+			qry := &q[i]
 			if qry.Match(line) {
 				return true
 			}
@@ -125,7 +129,8 @@ func (q Queries) match(line string, opt *QueryOption) bool {
 
 	default:
 		res := true
-		for _, qry := range q {
+		for i := range q {
+			qry := &q[i]
 			if !qry.Match(line) {
 				res = false
 			}
@@ -152,7 +157,7 @@ func ExtractQueries(args []string) Queries {
 	var res Queries
 
 	for _, arg := range args {
-		var qry *Query
+		var qry Query
 
 		switch {
 		case strings.Contains(arg, regexOperator):
@@ -170,9 +175,8 @@ func ExtractQueries(args []string) Queries {
 			tokens := strings.Split(arg, strictOperator)
 			qry = newQuery(tokens[0])
 			qry.value = tokens[1]
-		}
 
-		if qry == nil {
+		default:
 			return res
 		}
 
