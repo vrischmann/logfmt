@@ -2,9 +2,9 @@ package logfmt
 
 import (
 	"bytes"
-	"io"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 // Split splits a log line according to the logfmt rules and produces key-value pairs.
@@ -16,7 +16,9 @@ func Split(line string) Pairs {
 
 // PairParser is a parser of key-value pairs. It parses a logline according to the logfmt rules.
 type PairParser struct {
-	rd   *strings.Reader
+	data string
+	cur  string
+
 	buf  *bytes.Buffer
 	done bool
 
@@ -33,12 +35,14 @@ func (p *PairParser) Split(line string) Pairs {
 // SplitInto splits a log line according to the logfmt rules and produces key-value pairs.
 // This function appends the pairs to `pairs` and return the slice truncated.
 func (p *PairParser) SplitInto(line string, pairs Pairs) Pairs {
-	if p.rd == nil {
-		p.rd = new(strings.Reader)
+	if p.buf == nil {
 		p.buf = new(bytes.Buffer)
 	}
 	p.done = false
-	p.rd.Reset(line)
+
+	p.data = line
+	p.cur = line
+
 	p.pairs = pairs[:0]
 
 	for !p.done {
@@ -60,28 +64,31 @@ func (p *PairParser) maybeMoveBufToValue(unquote bool) {
 }
 
 func (p *PairParser) readKey() {
+	if p.cur == "" {
+		p.done = true
+		return
+	}
+
 	p.consumeWhitespace()
 
 	p.currentPair.Key = ""
 	p.currentPair.Value = ""
-	p.buf.Reset()
 
-	for {
-		ch := p.readRune()
-		switch ch {
-		case eof:
-			p.done = true
-			return
-		case '=':
-			p.currentPair.Key = p.buf.String()
-			return
-		default:
-			p.buf.WriteRune(ch)
-		}
+	pos := strings.IndexRune(p.cur, '=')
+	if pos == -1 {
+		p.done = true
+		return
 	}
+
+	p.currentPair.Key = p.cur[:pos]
+	p.cur = p.cur[pos+1:]
 }
 
 func (p *PairParser) readValue() {
+	if p.done {
+		return
+	}
+
 	p.consumeWhitespace()
 
 	p.buf.Reset()
@@ -136,20 +143,23 @@ func (p *PairParser) readQuotedValue() {
 var eof = rune(0)
 
 func (p *PairParser) readRune() rune {
-	ch, _, err := p.rd.ReadRune()
-	switch {
-	case err == io.EOF:
+	ch, _ := utf8.DecodeRuneInString(p.cur[0:])
+	if ch == utf8.RuneError {
+		p.cur = ""
 		return eof
-	default:
-		return ch
 	}
+	p.cur = p.cur[1:]
+
+	return ch
 }
 
 func (p *PairParser) consumeWhitespace() {
 	for {
 		ch := p.readRune()
 		if ch != ' ' {
-			p.rd.UnreadRune()
+			remaining := len(p.data) - len(p.cur)
+			p.cur = p.data[remaining-1:]
+
 			return
 		}
 	}
