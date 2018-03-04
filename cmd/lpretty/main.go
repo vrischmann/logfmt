@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -95,9 +94,7 @@ func runMain(cmd *cobra.Command, args []string) error {
 }
 
 func main() {
-	if err := rootCmd.Execute(); err != nil {
-		log.Fatal(err)
-	}
+	rootCmd.Execute()
 }
 
 var (
@@ -151,6 +148,7 @@ Examples:
             "table": "almanac"
         }
     }`,
+		Args: cobra.MinimumNArgs(1),
 		RunE: runMain,
 	}
 

@@ -2,51 +2,23 @@ package main
 
 import (
 	"bufio"
-	"flag"
-	"fmt"
 	"io"
-	"log"
 	"os"
 	"reflect"
 	"unsafe"
 
+	"github.com/spf13/cobra"
 	"github.com/vrischmann/logfmt/internal"
 	"github.com/vrischmann/logfmt/internal/flags"
 	"github.com/vrischmann/logfmt/lgrep"
 )
 
-func init() {
-	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage of lgrep: lgrep [OPTION]... QUERY... [FILE]...")
-		fmt.Fprintln(os.Stderr, "Search for QUERY in each FILE.")
-		fmt.Fprintln(os.Stderr, "Multiple files are allowed. If no files, search from stdin.")
-		fmt.Fprintln(os.Stderr, "QUERY must be in one of these form:")
-		fmt.Fprintln(os.Stderr, "  city=Lyon                      for a strict match. Will only match lines which have the `city` key with the value Lyon.")
-		fmt.Fprintln(os.Stderr, "  city~New                       for a fuzzy match. Will match lines which have the `city` key with any value contaning New.")
-		fmt.Fprintln(os.Stderr, "  city=~(Paris|Lyon|San [a-z]+)  for a regexp match. Will match lines which have the `city` key and for which the regexp matches the value.")
-		fmt.Fprintln(os.Stderr, "You can also trick lgrep to test for presence of a key by using a fuzzy match operator with no value to match:")
-		fmt.Fprintln(os.Stderr, "  city~                          Will match lines which have the `city` key with any value (because any value contains the empty string).")
-		fmt.Fprint(os.Stderr, "You can have multiple queries. By default it will work as an AND, you can treat them as a OR with the -or option.\n\n")
-		fmt.Fprintln(os.Stderr, "Available options:")
-
-		flag.PrintDefaults()
-	}
-}
-
-func main() {
-	var (
-		flReverse      = flag.Bool("v", false, "Reverse matches")
-		flWithFilename = flag.Bool("with-filename", false, "Display the filename")
-		flOr           = flag.Bool("or", false, "Treat multiple queries as a OR instead of an AND")
-	)
-	flag.Parse()
-
+func runMain(cmd *cobra.Command, args []string) error {
 	stopProfiling := internal.StartProfiling(flags.CPUProfile, flags.MemProfile)
 	defer stopProfiling()
 
 	//
 
-	args := flag.Args()
 	qs := lgrep.ExtractQueries(args)
 	args = args[len(qs):]
 
@@ -55,8 +27,8 @@ func main() {
 	inputs := internal.GetInputs(args)
 
 	qryOpt := &lgrep.QueryOption{
-		Or:      *flOr,
-		Reverse: *flReverse,
+		Or:      flOr,
+		Reverse: flReverse,
 	}
 
 	for _, input := range inputs {
@@ -74,13 +46,15 @@ func main() {
 			line := *(*string)(unsafe.Pointer(strHeader))
 
 			if qs.Match(line, qryOpt) {
-				printLine(*flWithFilename, input.Name, line)
+				printLine(flWithFilename, input.Name, line)
 			}
 		}
 		if err := scanner.Err(); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
+
+	return nil
 }
 
 func printLine(withFilename bool, inputName string, line string) {
@@ -89,4 +63,46 @@ func printLine(withFilename bool, inputName string, line string) {
 	} else {
 		io.WriteString(os.Stdout, line+"\n")
 	}
+}
+
+func main() {
+	rootCmd.Execute()
+}
+
+var (
+	rootCmd = &cobra.Command{
+		Use:   "lgrep [query] [file]",
+		Short: `search for "query" in each "file"`,
+		Long: `search for "query" in each "file".
+		
+Multiple files are allowed. If no files, search from stdin.
+
+QUERY must be in one of these form:
+
+    city=Lyon                      for a strict match. Will only match lines which have the "city" key with the value Lyon.
+    city~New                       for a fuzzy match. Will match lines which have the "city" key with any value contaning New.
+    city=~(Paris|Lyon|San [a-z]+)  for a regexp match. Will match lines which have the "city" key and for which the regexp matches the value.
+
+You can also trick lgrep to test for presence of a key by using a fuzzy match operator with no value to match:
+    city~                          Will match lines which have the "city" key with any value (because any value contains the empty string).
+
+You can have multiple queries. By default it will work as an AND, you can treat them as a OR with the --or option.`,
+		Args: cobra.MinimumNArgs(1),
+		RunE: runMain,
+	}
+
+	flReverse      bool
+	flWithFilename bool
+	flOr           bool
+)
+
+func init() {
+	fs := rootCmd.Flags()
+
+	fs.BoolVarP(&flReverse, "reverse", "v", false, "Reverse matches")
+	fs.BoolVarP(&flWithFilename, "with-filename", "H", false, "Display the filename")
+	fs.BoolVarP(&flOr, "or", "o", false, "Treat multiple queries as a OR instead of a AND")
+	fs.Var(&flags.MaxLineSize, "max-line-size", "Max size in bytes of a line (default %d)")
+	fs.StringVar(&flags.CPUProfile, "cpu-profile", "", "Writes a CPU profile at `cpu-profile` after execution")
+	fs.StringVar(&flags.MemProfile, "mem-profile", "", "Writes a memory profile at `mem-profile` after execution")
 }

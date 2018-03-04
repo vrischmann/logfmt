@@ -2,11 +2,10 @@ package main
 
 import (
 	"bufio"
-	"flag"
-	"fmt"
-	"log"
 	"os"
 	"strings"
+
+	"github.com/spf13/cobra"
 
 	"github.com/vrischmann/logfmt"
 	"github.com/vrischmann/logfmt/internal"
@@ -23,6 +22,8 @@ func (i *inputFiles) Set(s string) error {
 func (i *inputFiles) String() string {
 	return strings.Join(*i, ",")
 }
+
+func (i inputFiles) Type() string { return "string" }
 
 type cutFields []string
 
@@ -46,34 +47,13 @@ func (f cutFields) CutFrom(reverse bool, pairs logfmt.Pairs) logfmt.Pairs {
 	return res
 }
 
-func init() {
-	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage of lcut: lcut [OPTION]... FIELD...")
-		fmt.Fprintln(os.Stderr, "Cut FIELD from each line of the inputs")
-		fmt.Fprintln(os.Stderr, "Multiple fields are allowed. Does nothing if no fields are specified.")
-		fmt.Fprintln(os.Stderr, "Available options:")
-		flag.PrintDefaults()
-	}
-}
-
-func main() {
-	var (
-		flReverse = flag.Bool("v", false, "Reverse cut: keep only the fields provided")
-		flInput   inputFiles
-	)
-	flag.Var(&flInput, "i", "The input files. Can be specified multiple times. If no files, read from stdin")
-
-	flag.Parse()
-
+func runMain(cmd *cobra.Command, args []string) error {
 	stopProfiling := internal.StartProfiling(flags.CPUProfile, flags.MemProfile)
 	defer stopProfiling()
 
 	//
 
-	fields := cutFields(flag.Args())
-
-	//
-
+	fields := cutFields(args)
 	inputs := internal.GetInputs(flInput)
 
 	buf := make([]byte, 0, 4096)
@@ -84,7 +64,7 @@ func main() {
 			line := scanner.Text()
 			pairs := logfmt.Split(line)
 
-			pairs = fields.CutFrom(*flReverse, pairs)
+			pairs = fields.CutFrom(flReverse, pairs)
 
 			if len(pairs) <= 0 {
 				continue
@@ -95,13 +75,44 @@ func main() {
 
 			_, err := os.Stdout.Write(buf)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 
 			buf = buf[:0]
 		}
 		if err := scanner.Err(); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
+
+	return nil
+}
+
+func main() {
+	rootCmd.Execute()
+}
+
+var (
+	flReverse bool
+	flInput   inputFiles
+
+	rootCmd = &cobra.Command{
+		Use:   "lcut [field]",
+		Short: `cut "field" from each input log line`,
+		Long: `cut "field" from each input log line
+
+Multiple fields are allowed. Does nothing if no fields are specified.`,
+		Args: cobra.MinimumNArgs(1),
+		RunE: runMain,
+	}
+)
+
+func init() {
+	fs := rootCmd.Flags()
+
+	fs.BoolVarP(&flReverse, "reverse", "v", false, "Reverse cut: keep only the fields provided")
+	fs.Var(&flInput, "i", "Use these input files instead of stdin")
+	fs.Var(&flags.MaxLineSize, "max-line-size", "Max size in bytes of a line (default %d)")
+	fs.StringVar(&flags.CPUProfile, "cpu-profile", "", "Writes a CPU profile at `cpu-profile` after execution")
+	fs.StringVar(&flags.MemProfile, "mem-profile", "", "Writes a memory profile at `mem-profile` after execution")
 }

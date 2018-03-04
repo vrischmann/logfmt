@@ -1,7 +1,6 @@
 package flags
 
 import (
-	"flag"
 	"fmt"
 	"strconv"
 	"strings"
@@ -19,6 +18,10 @@ const (
 	kib = Size(1024)
 	mib = kib * 1024
 )
+
+func init() {
+	MaxLineSize = mib
+}
 
 func (z *Size) Set(s string) error {
 	switch {
@@ -61,11 +64,4 @@ func (z *Size) String() string {
 	}
 }
 
-func init() {
-	MaxLineSize = 1024 * 1024
-
-	flag.Var(&MaxLineSize, "max-line-size", "Max size in bytes of a line (default %d)")
-
-	flag.StringVar(&CPUProfile, "cpu-profile", "", "Writes a CPU profile at `cpu-profile` after execution")
-	flag.StringVar(&MemProfile, "mem-profile", "", "Writes a memory profile at `mem-profile` after execution")
-}
+func (z Size) Type() string { return "int64" }
