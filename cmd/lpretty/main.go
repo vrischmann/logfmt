@@ -2,10 +2,11 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"log"
 	"os"
+
+	"github.com/spf13/cobra"
 
 	"github.com/vrischmann/logfmt"
 	"github.com/vrischmann/logfmt/internal"
@@ -13,10 +14,8 @@ import (
 
 const transformOperator = "::"
 
-func extractTransform() (transform, []string) {
-	args := flag.Args()
-
-	if *flMerge {
+func extractTransform(args []string) (transform, []string) {
+	if flMerge {
 		return newMergeToJSONTransform(args), nil
 	}
 
@@ -42,15 +41,8 @@ func extractTransform() (transform, []string) {
 
 	return res, args
 }
-
-var (
-	flMerge = flag.Bool("merge", false, "Merge the fields to a JSON object")
-)
-
-func main() {
-	flag.Parse()
-
-	transform, args := extractTransform()
+func runMain(cmd *cobra.Command, args []string) error {
+	transform, args := extractTransform(args)
 
 	//
 
@@ -89,13 +81,82 @@ func main() {
 
 			_, err := os.Stdout.Write(buf)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 
 			buf = buf[:0]
 		}
 		if err := scanner.Err(); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
+
+	return nil
+}
+
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+var (
+	rootCmd = &cobra.Command{
+		Use:   "lpretty [field[::[transform]]",
+		Short: "prettify logfmt fields",
+		Long: `prettify logfmt fields by applying transformation on them.
+
+Every transform needs to be provided like this:
+  <field name>::<transform name>
+
+You can also just provide the field name and in this case the key from the field will be stripped from the output.
+
+Transformations available:
+  - json        for fields which contain valid JSON data
+  - exception   for fields which contain valid Java exceptions
+
+Examples:
+
+    $ echo 'request="{\"id\":10,\"name\":\"Vincent\"}"' > /tmp/logfmt
+    $ cat /tmp/logfmt | lpretty request::json
+    {
+        "request": {
+            "id": 10,
+            "name": "Vincent"
+        }
+    }
+
+There is a second mode where the fields are merged using the flag --merge/-M. In this mode every field listed in the arguments
+will be added to a single JSON object.
+
+You can also indicate that a field contains valid JSON data in this mode so that the JSON is embedded directly in the object and
+not reencoded as a string value.
+
+Examples:
+
+    $ echo 'id=10 name=vincent surname=Rischmann age=55' > /tmp/logfmt
+    $ cat /tmp/logfmt | lpretty -M id age
+    {
+        "id": "10",
+        "age": "55"
+    }
+
+    $ echo 'id=10 name=vincent data="{\"limit\":5000,\"offset\":30,\"table\":\"almanac\"}"' > /tmp/logfmt
+    $ cat /tmp/logfmt | lpretty -M id data::json
+    {
+        "id": "10",
+        "data: {
+            "limit": 5000,
+            "offset": 30,
+            "table": "almanac"
+        }
+    }`,
+		RunE: runMain,
+	}
+
+	flMerge bool
+)
+
+func init() {
+	rootCmd.Flags().BoolVarP(&flMerge, "merge", "M", false, "Merge all fields in a single JSON object")
 }
