@@ -46,7 +46,11 @@ func runMain(cmd *cobra.Command, args []string) error {
 			line := *(*string)(unsafe.Pointer(strHeader))
 
 			if qs.Match(line, qryOpt) {
-				printLine(flWithFilename, input.Name, line)
+				if flWithFilename {
+					io.WriteString(os.Stdout, input.Name+": "+line+"\n")
+				} else {
+					io.WriteString(os.Stdout, line+"\n")
+				}
 			}
 		}
 		if err := scanner.Err(); err != nil {
@@ -55,14 +59,6 @@ func runMain(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
-}
-
-func printLine(withFilename bool, inputName string, line string) {
-	if withFilename {
-		io.WriteString(os.Stdout, inputName+": "+line+"\n")
-	} else {
-		io.WriteString(os.Stdout, line+"\n")
-	}
 }
 
 func main() {
