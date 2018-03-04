@@ -38,3 +38,20 @@ It would work something like this:
 
     lcut foo bar baz file.log      // implicit AND. Removes all 3 fields.
     lcut -v foo file.log           // reverses the matching, meaning only foo will be left in the fields.
+
+### lpretty
+
+Prettify fields from each log line.
+
+Works by applying transformations on fields. Currently three transforms are provided:
+
+Two modes are provided, the normal mode which applies one transformation per field provided on the input:
+
+    lpretty error::exception      // treat the error field as containing a Java exception and display it properly.
+    lpretty request::json         // treat the request field as containing valid JSON data and display it properly.
+    lpretty name id               // no transform so the default is to remove the keys. This will result in the two values concatenated.
+
+The second mode merges the fields in a single JSON output per log line:
+
+    lpretty -M name id            // returns an object with the name and id fields.
+    lpretty -M name req::json     // returns an object with the name and the req field as an object instead of a string value.
