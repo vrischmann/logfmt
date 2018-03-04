@@ -3,9 +3,9 @@ package main
 import (
 	"bufio"
 	"flag"
+	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/vrischmann/logfmt"
 	"github.com/vrischmann/logfmt/internal"
@@ -13,44 +13,44 @@ import (
 
 const transformOperator = "::"
 
-func extractTransforms(args []string) transforms {
+func extractTransform() (transform, []string) {
+	args := flag.Args()
+
+	if *flMerge {
+		return newMergeToJSONTransform(args), nil
+	}
+
+	//
+
 	var res transforms
 
 	if len(args) == 0 {
-		return transforms{&stripKeyTransform{}}
-	}
-
-	if len(args) == 1 && strings.EqualFold(args[0], "json") {
-		return transforms{mergeToJSONTransform{}}
+		return &stripKeyTransform{}, args
 	}
 
 	for _, arg := range args {
-		if strings.Contains(arg, transformOperator) {
-			tokens := strings.Split(arg, transformOperator)
-			res = append(res, &singlePairTransform{
-				key: tokens[0],
-				typ: tokens[1],
-			})
-
-			continue
+		t := newSinglePairTransform(arg)
+		switch {
+		case t != nil:
+			res = append(res, t)
+		default:
+			res = append(res, &stripKeyTransform{key: arg})
 		}
 
-		res = append(res, &stripKeyTransform{key: arg})
-
-		break
+		args = args[1:]
 	}
 
-	return res
+	return res, args
 }
+
+var (
+	flMerge = flag.Bool("merge", false, "Merge the fields to a JSON object")
+)
 
 func main() {
 	flag.Parse()
 
-	args := flag.Args()
-	transforms := extractTransforms(args)
-	if len(args) > 0 {
-		args = args[len(transforms):]
-	}
+	transform, args := extractTransform()
 
 	//
 
@@ -65,7 +65,11 @@ func main() {
 
 			//
 
-			result := transforms.Apply(pairs)
+			result := transform.Apply(pairs)
+			if result == nil {
+				continue
+			}
+
 			switch v := result.(type) {
 			case logfmt.Pairs:
 				for _, pair := range v {
@@ -75,6 +79,10 @@ func main() {
 
 			case []byte:
 				buf = append(buf, v...)
+				buf = append(buf, '\n')
+
+			default:
+				panic(fmt.Errorf("invalid result type %T", result))
 			}
 
 			//
