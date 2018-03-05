@@ -54,10 +54,10 @@ func newSinglePairTransform(arg string) *singlePairTransform {
 }
 
 func (t *singlePairTransform) Apply(pairs logfmt.Pairs) interface{} {
-	ret := make(logfmt.Pairs, len(pairs))
+	ret := make(logfmt.Pairs, 0, len(pairs))
 
 loop:
-	for i, pair := range pairs {
+	for _, pair := range pairs {
 		if pair.Key != t.key {
 			continue
 		}
@@ -81,7 +81,7 @@ loop:
 			pair.Value = data
 		}
 
-		ret[i] = pair
+		ret = append(ret, pair)
 	}
 
 	return ret
