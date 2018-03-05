@@ -63,6 +63,10 @@ func runMain(cmd *cobra.Command, args []string) error {
 
 			switch v := result.(type) {
 			case logfmt.Pairs:
+				if len(v) == 0 {
+					break
+				}
+
 				for _, pair := range v {
 					buf = append(buf, []byte(pair.Value)...)
 				}
