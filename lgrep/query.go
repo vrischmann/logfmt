@@ -68,7 +68,7 @@ func (q *Query) Match(line string) bool {
 	}
 
 	if pair == nil {
-		return false
+		panic("the key was found but we got no pair, this is most likely a bug")
 	}
 
 	switch {
