@@ -154,13 +154,8 @@ func (p *PairParser) readRune() rune {
 }
 
 func (p *PairParser) consumeWhitespace() {
-	for {
-		ch := p.readRune()
-		if ch != ' ' {
-			remaining := len(p.data) - len(p.cur)
-			p.cur = p.data[remaining-1:]
-
-			return
-		}
-	}
+	idx := strings.IndexFunc(p.cur, func(r rune) bool {
+		return r != ' '
+	})
+	p.cur = p.cur[idx:]
 }
