@@ -143,12 +143,12 @@ func (p *PairParser) readQuotedValue() {
 var eof = rune(0)
 
 func (p *PairParser) readRune() rune {
-	ch, _ := utf8.DecodeRuneInString(p.cur[0:])
+	ch, n := utf8.DecodeRuneInString(p.cur[0:])
 	if ch == utf8.RuneError {
 		p.cur = ""
 		return eof
 	}
-	p.cur = p.cur[1:]
+	p.cur = p.cur[n:]
 
 	return ch
 }
