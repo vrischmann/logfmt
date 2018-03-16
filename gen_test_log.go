@@ -18,7 +18,7 @@ import (
 func dictionaryWordGenerator() <-chan string {
 	f, err := os.Open("/usr/share/dict/words")
 	if err != nil {
-		logrus.Fatal(err)
+		logrus.Fatalf("can't find words. if you're on a Debian derivative install wfrench. err=%v", err)
 	}
 
 	words := make([]string, 0, 65536)
