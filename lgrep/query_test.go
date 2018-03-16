@@ -54,6 +54,24 @@ func BenchmarkQueryNotFuzzyNotPresent(b *testing.B) {
 	}
 }
 
+func mkq(key, value string) Query {
+	q := newQuery(key)
+	q.value = value
+	return q
+}
+
+func mkfq(key, value string) Query {
+	q := mkq(key, value)
+	q.fuzzy = true
+	return q
+}
+
+func mkrq(key, value, re string) Query {
+	q := mkq(key, value)
+	q.regexp = regexp.MustCompile(re)
+	return q
+}
+
 func TestQueryMatch(t *testing.T) {
 	testCases := []struct {
 		input string
@@ -62,45 +80,47 @@ func TestQueryMatch(t *testing.T) {
 	}{
 		{
 			"foo=bar",
-			Query{key: "foo", value: "bar"},
+			mkq("foo", "bar"),
 			true,
 		},
 		{
 			"foo=abcdefgh",
-			Query{key: "foo", value: "def", fuzzy: true},
+			mkfq("foo", "def"),
 			true,
 		},
 		{
 			"foo=012494585",
-			Query{key: "foo", regexp: regexp.MustCompile("[0-9]+")},
+			mkrq("foo", "", "[0-9]+"),
 			true,
 		},
 		// non matches
 		{
 			"foo=bar",
-			Query{key: "ab", value: "cd"},
+			mkq("ab", "cd"),
 			false,
 		},
 		{
 			"foo=ab",
-			Query{key: "foo", value: "cd"},
+			mkq("foo", "cd"),
 			false,
 		},
 		{
 			"foo=paris",
-			Query{key: "foo", value: "rd", fuzzy: true},
+			mkfq("foo", "rd"),
 			false,
 		},
 		{
 			"foo=012494585",
-			Query{key: "foo", regexp: regexp.MustCompile("[a-z]+")},
+			mkrq("foo", "", "[a-z]+"),
 			false,
 		},
 	}
 
 	for _, tc := range testCases {
-		res := tc.qry.Match(tc.input)
-		require.Equal(t, tc.exp, res)
+		t.Run("", func(t *testing.T) {
+			res := tc.qry.Match(tc.input)
+			require.Equal(t, tc.exp, res)
+		})
 	}
 }
 
@@ -112,12 +132,12 @@ func TestQueryMatchKey(t *testing.T) {
 	}{
 		{
 			[]string{"a", "b", "c"},
-			Query{key: "foo"},
+			mkq("foo", ""),
 			false,
 		},
 		{
 			[]string{"foo"},
-			Query{key: "foo"},
+			mkq("foo", ""),
 			true,
 		},
 	}
@@ -139,7 +159,7 @@ func TestQueriesMatch(t *testing.T) {
 			"foo=bar bar=baz",
 			nil,
 			Queries{
-				{key: "foo", value: "bar"},
+				mkq("foo", "bar"),
 			},
 			true,
 		},
@@ -147,8 +167,8 @@ func TestQueriesMatch(t *testing.T) {
 			"foo=bar bar=baz",
 			nil,
 			Queries{
-				{key: "foo", value: "bar"},
-				{key: "bar", value: "baz"},
+				mkq("foo", "bar"),
+				mkq("bar", "baz"),
 			},
 			true,
 		},
@@ -159,8 +179,8 @@ func TestQueriesMatch(t *testing.T) {
 				Or: true,
 			},
 			Queries{
-				{key: "foo", value: "bar"},
-				{key: "bar", value: "baz"},
+				mkq("foo", "bar"),
+				mkq("bar", "baz"),
 			},
 			true,
 		},
@@ -170,8 +190,8 @@ func TestQueriesMatch(t *testing.T) {
 				Or: false,
 			},
 			Queries{
-				{key: "foo", value: "bar"},
-				{key: "bar", value: "baz"},
+				mkq("foo", "bar"),
+				mkq("bar", "baz"),
 			},
 			false,
 		},
@@ -182,7 +202,7 @@ func TestQueriesMatch(t *testing.T) {
 				Reverse: true,
 			},
 			Queries{
-				{key: "foo", value: "bar"},
+				mkq("foo", "bar"),
 			},
 			false,
 		},
@@ -193,7 +213,7 @@ func TestQueriesMatch(t *testing.T) {
 				Reverse: true,
 			},
 			Queries{
-				{key: "foo", value: "bar"},
+				mkq("foo", "bar"),
 			},
 			false,
 		},
@@ -203,7 +223,7 @@ func TestQueriesMatch(t *testing.T) {
 				Reverse: true,
 			},
 			Queries{
-				{key: "foo", value: "bar"},
+				mkq("foo", "bar"),
 			},
 			false,
 		},
@@ -213,8 +233,8 @@ func TestQueriesMatch(t *testing.T) {
 				Reverse: true,
 			},
 			Queries{
-				{key: "foo", value: "bar"},
-				{key: "a", value: "b"},
+				mkq("foo", "bar"),
+				mkq("a", "b"),
 			},
 			true,
 		},
@@ -225,8 +245,8 @@ func TestQueriesMatch(t *testing.T) {
 				Or: true,
 			},
 			Queries{
-				{key: "b", value: "c"},
-				{key: "a", value: "b"},
+				mkq("b", "c"),
+				mkq("a", "b"),
 			},
 			false,
 		},
@@ -249,24 +269,22 @@ func TestQueriesMatchKeys(t *testing.T) {
 			[]string{"a", "b", "c"},
 			nil,
 			Queries{
-				{key: "foo"},
+				mkq("foo", ""),
 			},
 			false,
 		},
 		{
 			[]string{"foo"},
 			nil,
-			Queries{
-				{key: "foo"},
-			},
+			Queries{mkq("foo", "")},
 			true,
 		},
 		{
 			[]string{"foo", "bar"},
 			nil,
 			Queries{
-				{key: "foo"},
-				{key: "ba"},
+				mkq("foo", ""),
+				mkq("ba", ""),
 			},
 			false,
 		},
@@ -274,8 +292,8 @@ func TestQueriesMatchKeys(t *testing.T) {
 			[]string{"foo", "bar", "abcd"},
 			nil,
 			Queries{
-				{key: "foo"},
-				{key: "bar"},
+				mkq("foo", ""),
+				mkq("bar", ""),
 			},
 			true,
 		},
@@ -286,7 +304,7 @@ func TestQueriesMatchKeys(t *testing.T) {
 				Reverse: true,
 			},
 			Queries{
-				{key: "foo"},
+				mkq("foo", ""),
 			},
 			true,
 		},
@@ -296,7 +314,7 @@ func TestQueriesMatchKeys(t *testing.T) {
 				Reverse: true,
 			},
 			Queries{
-				{key: "a"},
+				mkq("a", ""),
 			},
 			false,
 		},
