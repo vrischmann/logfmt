@@ -78,7 +78,7 @@ func getReader(filename string) (io.Reader, error) {
 		return nil, err
 	}
 
-	_, err = f.Seek(0, os.SEEK_SET)
+	_, err = f.Seek(0, io.SeekStart)
 	if err != nil {
 		return nil, err
 	}

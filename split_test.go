@@ -2,6 +2,7 @@ package logfmt
 
 import (
 	"bufio"
+	"io"
 	"os"
 	"testing"
 
@@ -94,7 +95,7 @@ func BenchmarkSplitFile(b *testing.B) {
 
 	var parser PairParser
 	for i := 0; i < b.N; i++ {
-		_, err := f.Seek(0, os.SEEK_SET)
+		_, err := f.Seek(0, io.SeekStart)
 		require.NoError(b, err)
 
 		scanner := bufio.NewScanner(f)
