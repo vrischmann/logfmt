@@ -10,6 +10,8 @@ import (
 	"github.com/vrischmann/logfmt/lgrep"
 )
 
+var newLineBytes = []byte{'\n'}
+
 func runMain(cmd *cobra.Command, args []string) error {
 	stopProfiling := internal.StartProfiling(flags.CPUProfile, flags.MemProfile)
 	defer stopProfiling()
@@ -38,13 +40,17 @@ func runMain(cmd *cobra.Command, args []string) error {
 		}
 
 		for scanner.Scan() {
-			line := scanner.String()
+			var (
+				data = scanner.Bytes()
+				line = scanner.String()
+			)
 
 			if qs.Match(line, qryOpt) {
 				if flWithFilename {
 					io.WriteString(os.Stdout, input.Name+": "+line+"\n")
 				} else {
-					io.WriteString(os.Stdout, line+"\n")
+					os.Stdout.Write(data)
+					os.Stdout.Write(newLineBytes)
 				}
 			}
 		}

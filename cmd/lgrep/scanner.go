@@ -13,6 +13,7 @@ import (
 type scanner interface {
 	Scan() bool
 	String() string
+	Bytes() []byte
 	Err() error
 }
 
@@ -44,17 +45,12 @@ func (s *noCopyScanner) Scan() bool {
 	return true
 }
 
+func (s *noCopyScanner) Bytes() []byte { return s.next }
+func (s *noCopyScanner) Err() error    { return nil }
+
 func (s *noCopyScanner) String() string {
 	data := s.next
-
-	s.strHeader.Data = uintptr(unsafe.Pointer(&data[0]))
-	s.strHeader.Len = len(data)
-
-	return *(*string)(unsafe.Pointer(s.strHeader))
-}
-
-func (s *noCopyScanner) Err() error {
-	return nil
+	return unsafeBytesToString(s.strHeader, data)
 }
 
 type stdScanner struct {
@@ -72,19 +68,18 @@ func newStdScanner(rd io.Reader) scanner {
 	}
 }
 
-func (s *stdScanner) Scan() bool {
-	return s.s.Scan()
-}
+func (s *stdScanner) Scan() bool    { return s.s.Scan() }
+func (s *stdScanner) Bytes() []byte { return s.s.Bytes() }
+func (s *stdScanner) Err() error    { return s.s.Err() }
 
 func (s *stdScanner) String() string {
 	data := s.s.Bytes()
-
-	s.strHeader.Data = uintptr(unsafe.Pointer(&data[0]))
-	s.strHeader.Len = len(data)
-
-	return *(*string)(unsafe.Pointer(s.strHeader))
+	return unsafeBytesToString(s.strHeader, data)
 }
 
-func (s *stdScanner) Err() error {
-	return s.s.Err()
+func unsafeBytesToString(hdr *reflect.StringHeader, data []byte) string {
+	hdr.Data = uintptr(unsafe.Pointer(&data[0]))
+	hdr.Len = len(data)
+
+	return *(*string)(unsafe.Pointer(hdr))
 }
