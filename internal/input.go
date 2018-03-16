@@ -6,11 +6,13 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"syscall"
 )
 
 type Input struct {
 	Name   string
 	Reader io.Reader
+	Data   []byte
 }
 
 // GetInputs returns all inputs defined in `args`.
@@ -18,7 +20,7 @@ type Input struct {
 // files from a directory.
 func GetInputs(args []string) []Input {
 	if len(args) == 0 {
-		return []Input{{"stdin", os.Stdin}}
+		return []Input{{"stdin", os.Stdin, nil}}
 	}
 
 	inputs := make([]Input, 0, len(args))
@@ -29,19 +31,54 @@ func GetInputs(args []string) []Input {
 		}
 
 		for _, filename := range filenames {
-			rd, err := getReader(filename)
+			input, err := getInput(filename)
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			inputs = append(inputs, Input{
-				Name:   filename,
-				Reader: rd,
-			})
+			inputs = append(inputs, *input)
 		}
 	}
 
 	return inputs
+}
+
+func getInput(filename string) (*Input, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	gz, err := isGzip(f)
+	if err != nil {
+		return nil, err
+	}
+
+	switch {
+	case gz:
+		rd, err := getReader(f, true)
+		if err != nil {
+			return nil, err
+		}
+
+		return &Input{
+			Name:   filename,
+			Reader: rd,
+			Data:   nil,
+		}, nil
+
+	default:
+		data, err := getMmappedData(f)
+		if err != nil {
+			return nil, err
+		}
+
+		return &Input{
+			Name:   filename,
+			Reader: nil,
+			Data:   data,
+		}, nil
+	}
 }
 
 func isGzip(r io.Reader) (bool, error) {
@@ -66,19 +103,18 @@ func isGzip(r io.Reader) (bool, error) {
 	return gzip, nil
 }
 
+func getMmappedData(f *os.File) ([]byte, error) {
+	fi, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	return syscall.Mmap(int(f.Fd()), 0, int(fi.Size()), syscall.PROT_READ, syscall.MAP_PRIVATE)
+}
+
 // getReader returns a reader for the file, handling gzip compression if necessary
-func getReader(filename string) (io.Reader, error) {
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	gz, err := isGzip(f)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = f.Seek(0, io.SeekStart)
+func getReader(f *os.File, gz bool) (io.Reader, error) {
+	_, err := f.Seek(0, io.SeekStart)
 	if err != nil {
 		return nil, err
 	}
