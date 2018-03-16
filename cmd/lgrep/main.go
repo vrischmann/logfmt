@@ -1,11 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"io"
 	"os"
-	"reflect"
-	"unsafe"
 
 	"github.com/spf13/cobra"
 	"github.com/vrischmann/logfmt/internal"
@@ -32,18 +29,16 @@ func runMain(cmd *cobra.Command, args []string) error {
 	}
 
 	for _, input := range inputs {
-		scanner := bufio.NewScanner(input.Reader)
-		scanner.Buffer(make([]byte, int(flags.MaxLineSize)/2), int(flags.MaxLineSize))
-
-		strHeader := new(reflect.StringHeader)
+		var scanner scanner
+		switch {
+		case input.Reader != nil:
+			scanner = newStdScanner(input.Reader)
+		case input.Data != nil:
+			scanner = newNoCopyScanner(input.Data)
+		}
 
 		for scanner.Scan() {
-			data := scanner.Bytes()
-
-			strHeader.Data = uintptr(unsafe.Pointer(&data[0]))
-			strHeader.Len = len(data)
-
-			line := *(*string)(unsafe.Pointer(strHeader))
+			line := scanner.String()
 
 			if qs.Match(line, qryOpt) {
 				if flWithFilename {
@@ -70,7 +65,7 @@ var (
 		Use:   "lgrep [query] [file]",
 		Short: `search for "query" in each "file"`,
 		Long: `search for "query" in each "file".
-		
+
 Multiple files are allowed. If no files, search from stdin.
 
 QUERY must be in one of these form:
