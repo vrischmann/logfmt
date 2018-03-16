@@ -42,7 +42,13 @@ func TestGetReader(t *testing.T) {
 	for _, tc := range testCases {
 		filename := mkFile(t, "", "logfmt", tc.data, tc.mkgzip)
 
-		rd, err := getReader(filename)
+		f, err := os.Open(filename)
+		require.NoError(t, err)
+
+		gz, err := isGzip(f)
+		require.NoError(t, err)
+
+		rd, err := getReader(f, gz)
 		require.NoError(t, err)
 
 		if tc.mkgzip {
@@ -79,6 +85,16 @@ func mkFile(t *testing.T, dir, prefix string, data string, mkgzip bool) string {
 	return f.Name()
 }
 
+func getInputReader(input Input) io.Reader {
+	var rd io.Reader
+	if input.Reader != nil {
+		rd = input.Reader
+	} else {
+		rd = bytes.NewReader(input.Data)
+	}
+	return rd
+}
+
 func TestGetInputs(t *testing.T) {
 	filenames := []string{
 		mkFile(t, "", "logfmt", "foobar1", false),
@@ -94,7 +110,8 @@ func TestGetInputs(t *testing.T) {
 	buf := new(bytes.Buffer)
 
 	for _, input := range inputs {
-		data, err := ioutil.ReadAll(input.Reader)
+		data, err := ioutil.ReadAll(getInputReader(input))
+
 		require.NoError(t, err)
 		buf.Write(data)
 	}
@@ -121,7 +138,7 @@ func TestGetInputDirectory(t *testing.T) {
 	buf := new(bytes.Buffer)
 
 	for _, input := range inputs {
-		data, err := ioutil.ReadAll(input.Reader)
+		data, err := ioutil.ReadAll(getInputReader(input))
 		require.NoError(t, err)
 		buf.Write(data)
 	}

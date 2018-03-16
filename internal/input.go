@@ -103,6 +103,7 @@ func isGzip(r io.Reader) (bool, error) {
 	return gzip, nil
 }
 
+// TODO(vincent): split for different OSes
 func getMmappedData(f *os.File) ([]byte, error) {
 	fi, err := f.Stat()
 	if err != nil {
