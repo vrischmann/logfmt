@@ -68,7 +68,13 @@ func (q *Query) Match(line string) bool {
 	}
 
 	if pair == nil {
-		panic("the key was found but we got no pair, this is most likely a bug")
+		// It's possible that `keyWithEquals` is a part of another key, for example:
+		// keyWithEquals    foobar=
+		// the key         afoobar=
+		//
+		// In that cas the check `strings.Contains` would match above but the actual key isn't present
+		// therefore the pair would be nil.
+		return false
 	}
 
 	switch {
