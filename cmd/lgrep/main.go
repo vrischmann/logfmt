@@ -40,10 +40,12 @@ func runMain(cmd *cobra.Command, args []string) error {
 		}
 
 		for scanner.Scan() {
-			var (
-				data = scanner.Bytes()
-				line = scanner.String()
-			)
+			data := scanner.Bytes()
+			if len(data) <= 0 {
+				continue
+			}
+
+			line := scanner.String()
 
 			if qs.Match(line, qryOpt) {
 				if flWithFilename {
