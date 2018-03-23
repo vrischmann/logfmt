@@ -39,6 +39,9 @@ func runMain(cmd *cobra.Command, args []string) error {
 
 		for scanner.Scan() {
 			data := scanner.Bytes()
+			if len(data) <= 0 {
+				continue
+			}
 
 			strHeader.Data = uintptr(unsafe.Pointer(&data[0]))
 			strHeader.Len = len(data)
@@ -70,7 +73,7 @@ var (
 		Use:   "lgrep [query] [file]",
 		Short: `search for "query" in each "file"`,
 		Long: `search for "query" in each "file".
-		
+
 Multiple files are allowed. If no files, search from stdin.
 
 QUERY must be in one of these form:
