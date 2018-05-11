@@ -111,7 +111,7 @@ func init() {
 	fs := rootCmd.Flags()
 
 	fs.BoolVarP(&flReverse, "reverse", "v", false, "Reverse cut: keep only the fields provided")
-	fs.Var(&flInput, "i", "Use these input files instead of stdin")
+	fs.VarP(&flInput, "input", "i", "Use these input files instead of stdin")
 	fs.Var(&flags.MaxLineSize, "max-line-size", "Max size in bytes of a line (default %d)")
 	fs.StringVar(&flags.CPUProfile, "cpu-profile", "", "Writes a CPU profile at `cpu-profile` after execution")
 	fs.StringVar(&flags.MemProfile, "mem-profile", "", "Writes a memory profile at `mem-profile` after execution")
