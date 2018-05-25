@@ -50,8 +50,14 @@ func TestSplit(t *testing.T) {
 	}
 }
 
-func TestSplitInto(t *testing.T) {
+func TestSplitNoValue(t *testing.T) {
+	var parser PairParser
 
+	pairs := parser.Split("body=")
+	require.Empty(t, pairs)
+}
+
+func TestSplitInto(t *testing.T) {
 	testCases := []string{
 		"city=Lyon name=Vincent age=123",
 		"city=Lyon name=Vincent age=123",
