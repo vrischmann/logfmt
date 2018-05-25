@@ -42,6 +42,12 @@ func TestSplit(t *testing.T) {
 				{"json", `"{\"Foo\":\"foo\",\"Bar\":\"bar\",\"Baz\":{\"A\":12,\"B\":4540,\"C\":{\"Opened\":true}}}"`},
 			},
 		},
+		{
+			`foo="Can\'t do this"`,
+			Pairs{
+				{"foo", "Can't do this"},
+			},
+		},
 	}
 
 	for _, tc := range testCases {

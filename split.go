@@ -128,8 +128,12 @@ func (p *PairParser) readQuotedValue() {
 			return
 		case ch == '\\':
 			nextCh := p.readRune()
-			p.buf.WriteRune(ch)
-			p.buf.WriteRune(nextCh)
+			if nextCh != '\'' {
+				p.buf.WriteRune(ch)
+				p.buf.WriteRune(nextCh)
+			} else {
+				p.buf.WriteRune(nextCh)
+			}
 		case ch == '"':
 			p.buf.WriteRune(ch)
 			p.maybeMoveBufToValue(true)
