@@ -75,7 +75,7 @@ func (p *PairParser) readKey() {
 	p.currentPair.Value = ""
 
 	pos := strings.IndexRune(p.cur, '=')
-	if pos == -1 {
+	if pos == -1 || len(p.cur[pos+1:]) == 0 {
 		p.done = true
 		return
 	}
