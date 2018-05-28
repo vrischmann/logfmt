@@ -56,6 +56,7 @@ func newSinglePairTransform(arg string) *singlePairTransform {
 func (t *singlePairTransform) Apply(pairs logfmt.Pairs) interface{} {
 	ret := make(logfmt.Pairs, 0, len(pairs))
 
+loop:
 	for _, pair := range pairs {
 		if pair.Key != t.key {
 			continue
@@ -65,12 +66,16 @@ func (t *singlePairTransform) Apply(pairs logfmt.Pairs) interface{} {
 		case "json":
 			buf := new(bytes.Buffer)
 			err := json.Indent(buf, []byte(pair.Value), "", "  ")
-			if err == nil {
+			if err != nil {
+				continue loop
+			} else {
 				pair.Value = buf.String()
 			}
 		case "exception":
 			data, err := strconv.Unquote(pair.Value)
-			if err == nil {
+			if err != nil {
+				continue loop
+			} else {
 				pair.Value = data
 			}
 		}
