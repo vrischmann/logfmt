@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"strconv"
 	"strings"
 
 	"github.com/vrischmann/logfmt"
@@ -70,13 +69,6 @@ loop:
 				continue loop
 			} else {
 				pair.Value = buf.String()
-			}
-		case "exception":
-			data, err := strconv.Unquote(pair.Value)
-			if err != nil {
-				continue loop
-			} else {
-				pair.Value = data
 			}
 		}
 
