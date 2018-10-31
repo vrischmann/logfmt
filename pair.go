@@ -52,7 +52,7 @@ func (p Pairs) AppendFormat(b []byte) []byte {
 }
 
 func needsQuoting(s string) bool {
-	return strings.ContainsAny(s, " \"")
+	return strings.ContainsAny(s, " \"=")
 }
 
 // Format formats the pairs in a logfmt compatible way.
