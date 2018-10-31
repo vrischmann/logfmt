@@ -48,6 +48,12 @@ func TestPairsFormat(t *testing.T) {
 			},
 			`a="\"bar\"baz\""`,
 		},
+		{
+			Pairs{
+				{"abcd", "a=e"},
+			},
+			`abcd="a=e"`,
+		},
 	}
 
 	for _, tc := range testCases {
