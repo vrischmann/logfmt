@@ -9,6 +9,7 @@ import (
 
 	"github.com/vrischmann/logfmt"
 	"github.com/vrischmann/logfmt/internal"
+	"github.com/vrischmann/logfmt/internal/flags"
 )
 
 const transformOperator = "::"
@@ -50,6 +51,7 @@ func runMain(cmd *cobra.Command, args []string) error {
 	buf := make([]byte, 0, 4096)
 	for _, input := range inputs {
 		scanner := bufio.NewScanner(input.Reader)
+		scanner.Buffer(make([]byte, int(flags.MaxLineSize)/2), int(flags.MaxLineSize))
 		for scanner.Scan() {
 			line := scanner.Text()
 			pairs := logfmt.Split(line)
@@ -160,5 +162,8 @@ Examples:
 )
 
 func init() {
-	rootCmd.Flags().BoolVarP(&flMerge, "merge", "M", false, "Merge all fields in a single JSON object")
+	fs := rootCmd.Flags()
+
+	fs.Var(&flags.MaxLineSize, "max-line-size", "Max size in bytes of a line (default %d)")
+	fs.BoolVarP(&flMerge, "merge", "M", false, "Merge all fields in a single JSON object")
 }
