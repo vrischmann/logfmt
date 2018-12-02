@@ -3,8 +3,11 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"strings"
+	"time"
 
+	"github.com/oklog/ulid"
 	"github.com/vrischmann/logfmt"
 )
 
@@ -70,6 +73,9 @@ loop:
 			} else {
 				pair.Value = buf.String()
 			}
+		case "ulid":
+			id := ulid.MustParse(pair.Value)
+			pair.Value = fmt.Sprintf("{original: %s; time: %s}", pair.Value, ulid.Time(id.Time()).UTC().Format(time.RFC3339))
 		}
 
 		ret = append(ret, pair)
