@@ -164,6 +164,6 @@ Examples:
 func init() {
 	fs := rootCmd.Flags()
 
-	fs.Var(&flags.MaxLineSize, "max-line-size", "Max size in bytes of a line (default %d)")
+	fs.Var(&flags.MaxLineSize, "max-line-size", "Max size in bytes of a line")
 	fs.BoolVarP(&flMerge, "merge", "M", false, "Merge all fields in a single JSON object")
 }
