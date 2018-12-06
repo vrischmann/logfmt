@@ -54,13 +54,11 @@ func (p *PairParser) SplitInto(line string, pairs Pairs) Pairs {
 }
 
 func (p *PairParser) maybeMoveBufToValue(unquote bool) {
-	if p.buf.Len() > 0 {
-		p.currentPair.Value = p.buf.String()
-		if unquote {
-			p.currentPair.Value, _ = strconv.Unquote(p.currentPair.Value)
-		}
-		p.pairs = append(p.pairs, p.currentPair)
+	p.currentPair.Value = p.buf.String()
+	if unquote {
+		p.currentPair.Value, _ = strconv.Unquote(p.currentPair.Value)
 	}
+	p.pairs = append(p.pairs, p.currentPair)
 }
 
 func (p *PairParser) readKey() {
@@ -88,8 +86,6 @@ func (p *PairParser) readValue() {
 	if p.done {
 		return
 	}
-
-	p.consumeWhitespace()
 
 	p.buf.Reset()
 

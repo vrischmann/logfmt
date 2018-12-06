@@ -48,11 +48,21 @@ func TestSplit(t *testing.T) {
 				{"foo", "Can't do this"},
 			},
 		},
+		{
+			`foo="bar" tags= bar=baz`,
+			Pairs{
+				{"foo", "bar"},
+				{"tags", ""},
+				{"bar", "baz"},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
-		res := Split(tc.input)
-		require.Equal(t, tc.exp, res)
+		t.Run("", func(t *testing.T) {
+			res := Split(tc.input)
+			require.Equal(t, tc.exp, res)
+		})
 	}
 }
 
@@ -75,8 +85,10 @@ func TestSplitInto(t *testing.T) {
 		pairs  = make(Pairs, 32)
 	)
 	for _, tc := range testCases {
-		pairs = parser.SplitInto(tc, pairs)
-		require.Equal(t, 3, len(pairs))
+		t.Run("", func(t *testing.T) {
+			pairs = parser.SplitInto(tc, pairs)
+			require.Equal(t, 3, len(pairs))
+		})
 	}
 }
 

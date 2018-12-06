@@ -54,11 +54,20 @@ func TestPairsFormat(t *testing.T) {
 			},
 			`abcd="a=e"`,
 		},
+		{
+			Pairs{
+				{"abcd", ""},
+				{"bar", "baz"},
+			},
+			`abcd= bar=baz`,
+		},
 	}
 
 	for _, tc := range testCases {
-		sort.Sort(tc.input)
-		s := tc.input.Format()
-		require.Equal(t, tc.exp, s)
+		t.Run("", func(t *testing.T) {
+			sort.Sort(tc.input)
+			s := tc.input.Format()
+			require.Equal(t, tc.exp, s)
+		})
 	}
 }
