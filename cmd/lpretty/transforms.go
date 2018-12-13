@@ -127,6 +127,12 @@ func (t *mergeToJSONTransform) Apply(pairs logfmt.Pairs) interface{} {
 	return data
 }
 
+type dummyTransform struct{}
+
+func (t *dummyTransform) Apply(pairs logfmt.Pairs) interface{} {
+	return pairs
+}
+
 type transforms []transform
 
 func (t transforms) Apply(pairs logfmt.Pairs) interface{} {

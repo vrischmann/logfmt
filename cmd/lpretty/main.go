@@ -18,14 +18,16 @@ func extractTransform(args []string) (transform, []string) {
 	if flMerge {
 		return newMergeToJSONTransform(args), nil
 	}
+	if flNewline {
+		return &dummyTransform{}, nil
+	}
+	if flStripKey {
+		return &stripKeyTransform{}, args
+	}
 
 	//
 
 	var res transforms
-
-	if len(args) == 0 {
-		return &stripKeyTransform{}, args
-	}
 
 	for _, arg := range args {
 		t := newSinglePairTransform(arg)
@@ -69,10 +71,26 @@ func runMain(cmd *cobra.Command, args []string) error {
 					break
 				}
 
-				for _, pair := range v {
-					buf = append(buf, []byte(pair.Value)...)
+				switch {
+				case flNewline:
+					// When there's no argument default to printing each field in its own line
+
+					for _, pair := range v {
+						buf = append(buf, pair.Key...)
+						buf = append(buf, '=')
+						buf = append(buf, pair.Value...)
+						buf = append(buf, '\n')
+					}
+
+					buf = append(buf, '\n')
+
+				default:
+
+					for _, pair := range v {
+						buf = append(buf, []byte(pair.Value)...)
+					}
+					buf = append(buf, '\n')
 				}
-				buf = append(buf, '\n')
 
 			case []byte:
 				buf = append(buf, v...)
@@ -116,7 +134,8 @@ You can also just provide the field name and in this case the key from the field
 
 Transformations available:
   - json        for fields which contain valid JSON data
-  - exception   for fields which contain valid Java exceptions
+  - ulid        for fields which contain a valid ULID
+  - error       for fields which contain valid Java exceptions
 
 Examples:
 
@@ -153,12 +172,22 @@ Examples:
             "offset": 30,
             "table": "almanac"
         }
-    }`,
-		Args: cobra.MinimumNArgs(1),
+    }
+
+Finally there's a third mode which strips the key of the first pair and only prints its value.
+This is useful when you pipe lpretty to the output of lcut.
+
+Examples:
+
+    $ echo 'id=10 name=vincent surname=Rischmann age=55' > /tmp/logfmt
+    $ cat /tmp/logfmt | lcut -v surname | lpretty -S
+	Rischmann`,
 		RunE: runMain,
 	}
 
-	flMerge bool
+	flMerge    bool
+	flNewline  bool
+	flStripKey bool
 )
 
 func init() {
@@ -166,4 +195,6 @@ func init() {
 
 	fs.Var(&flags.MaxLineSize, "max-line-size", "Max size in bytes of a line")
 	fs.BoolVarP(&flMerge, "merge", "M", false, "Merge all fields in a single JSON object")
+	fs.BoolVarP(&flNewline, "newline", "N", false, "Print all fields into its own line")
+	fs.BoolVarP(&flStripKey, "strip-key", "S", false, "Strip the key of the first pair and only print the value")
 }
