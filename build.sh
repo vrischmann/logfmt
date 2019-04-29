@@ -10,5 +10,6 @@ function build()
 build cmd/lgrep
 build cmd/lcut
 build cmd/lpretty
+build cmd/lsort
 
-upx -qq $GOPATH/bin/lgrep $GOPATH/bin/lcut $GOPATH/bin/lpretty || exit 1
+upx -qq $GOPATH/bin/lgrep $GOPATH/bin/lcut $GOPATH/bin/lpretty $GOPATH/bin/lsort || exit 1
