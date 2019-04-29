@@ -109,13 +109,21 @@ func runMain(cmd *cobra.Command, args []string) error {
 
 	//
 
+	var sl sort.Interface
 	switch {
 	case flNumericSort:
-		sort.Sort(sortNumerical(lines))
+		sl = sortNumerical(lines)
 	case flDurationSort:
-		sort.Sort(sortByDuration(lines))
+		sl = sortByDuration(lines)
 	default:
-		sort.Sort(sortAlphabetical(lines))
+		sl = sortAlphabetical(lines)
+	}
+
+	switch {
+	case flReverse:
+		sort.Sort(sort.Reverse(sl))
+	default:
+		sort.Sort(sl)
 	}
 
 	//
@@ -132,6 +140,7 @@ func main() {
 }
 
 var (
+	flReverse      bool
 	flNumericSort  bool
 	flDurationSort bool
 
@@ -184,6 +193,7 @@ Note: sorting is done in memory for now so be careful with your input data.`,
 func init() {
 	fs := rootCmd.Flags()
 
+	fs.BoolVarP(&flReverse, "reverse", "v", false, "Reverse sort")
 	fs.BoolVarP(&flNumericSort, "numeric-sort", "n", false, "Use a numeric sort instead of a alphabetical sort")
 	fs.BoolVarP(&flDurationSort, "duration-sort", "d", false, "Use a duration sort instead of a alphabetical sort")
 	fs.Var(&flags.MaxLineSize, "max-line-size", "Max size in bytes of a line")
