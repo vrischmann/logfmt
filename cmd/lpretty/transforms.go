@@ -85,11 +85,13 @@ loop:
 }
 
 type mergeToJSONTransform struct {
+	all  bool
 	keys map[string]string
 }
 
-func newMergeToJSONTransform(args []string) *mergeToJSONTransform {
+func newMergeToJSONTransform(all bool, args []string) *mergeToJSONTransform {
 	ret := &mergeToJSONTransform{
+		all:  all,
 		keys: make(map[string]string),
 	}
 
@@ -110,7 +112,7 @@ func (t *mergeToJSONTransform) Apply(pairs logfmt.Pairs) interface{} {
 	obj := make(map[string]interface{})
 	for _, pair := range pairs {
 		typ, ok := t.keys[pair.Key]
-		if !ok {
+		if !ok && !t.all {
 			continue
 		}
 

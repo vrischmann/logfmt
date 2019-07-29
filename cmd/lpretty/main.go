@@ -16,7 +16,7 @@ const transformOperator = "::"
 
 func extractTransform(args []string) (transform, []string) {
 	if flMerge {
-		return newMergeToJSONTransform(args), nil
+		return newMergeToJSONTransform(flAll, args), nil
 	}
 	if flNewline {
 		return &dummyTransform{}, nil
@@ -73,8 +73,6 @@ func runMain(cmd *cobra.Command, args []string) error {
 
 				switch {
 				case flNewline:
-					// When there's no argument default to printing each field in its own line
-
 					for _, pair := range v {
 						buf = append(buf, pair.Key...)
 						buf = append(buf, '=')
@@ -188,6 +186,7 @@ Examples:
 	flMerge    bool
 	flNewline  bool
 	flStripKey bool
+	flAll      bool
 )
 
 func init() {
@@ -197,4 +196,5 @@ func init() {
 	fs.BoolVarP(&flMerge, "merge", "M", false, "Merge all fields in a single JSON object")
 	fs.BoolVarP(&flNewline, "newline", "N", false, "Print all fields into its own line")
 	fs.BoolVarP(&flStripKey, "strip-key", "S", false, "Strip the key of the first pair and only print the value")
+	fs.BoolVar(&flAll, "all", false, "When merging in a single JSON object include all fields, not just the one described in the arguments")
 }
