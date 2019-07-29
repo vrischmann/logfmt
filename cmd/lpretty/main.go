@@ -147,38 +147,78 @@ Examples:
     }
 
 There is a second mode where the fields are merged using the flag --merge/-M. In this mode every field listed in the arguments
-will be added to a single JSON object.
+will be added to a single JSON object. If you add the --all flag it will include _every_ field in the output, applying the
+transformations given in the list of arguments (if any).
 
 You can also indicate that a field contains valid JSON data in this mode so that the JSON is embedded directly in the object and
 not reencoded as a string value.
 
 Examples:
 
-    $ echo 'id=10 name=vincent surname=Rischmann age=55' > /tmp/logfmt
-    $ cat /tmp/logfmt | lpretty -M id age
-    {
-        "id": "10",
-        "age": "55"
-    }
+* The most basic use case: output some fields
 
-    $ echo 'id=10 name=vincent data="{\"limit\":5000,\"offset\":30,\"table\":\"almanac\"}"' > /tmp/logfmt
-    $ cat /tmp/logfmt | lpretty -M id data::json
-    {
-        "id": "10",
-        "data: {
-            "limit": 5000,
-            "offset": 30,
-            "table": "almanac"
-        }
-    }
+	$ echo 'id=10 name=vincent surname=Rischmann age=55' > /tmp/logfmt
+	$ cat /tmp/logfmt | lpretty -M id age
+	{
+		"id": "10",
+		"age": "55"
+	}
+
+* More complex use case: output some fields but treat one as JSON data
+
+	$ echo 'id=10 name=vincent data="{\"limit\":5000,\"offset\":30,\"table\":\"almanac\"}"' > /tmp/logfmt
+	$ cat /tmp/logfmt | lpretty -M id data::json
+	{
+		"id": "10",
+		"data: {
+			"limit": 5000,
+			"offset": 30,
+			"table": "almanac"
+		}
+	}
+
+* Another relatively basic use case: output all fields in a single JSON object
+
+	$ echo 'id=10 name=vincent surname=Rischmann age=55' > /tmp/logfmt
+	$ cat /tmp/logfmt | lpretty -M --all
+	{
+		"age": "55",
+		"id": "10",
+		"name": "vincent",
+		"surname": "Rischmann"
+	}
+
+* If we try that with a field containing JSON data
+
+	$ echo 'id=10 name=vincent data="{\"limit\":5000,\"offset\":30,\"table\":\"almanac\"}"' > /tmp/logfmt
+	$ cat /tmp/logfmt | lpretty -M --all
+	{
+		"data": "{\"limit\":5000,\"offset\":30,\"table\":\"almanac\"}",
+		"id": "10",
+		"name": "vincent"
+	}
+
+* Not the easiest to work, so we can combine both flags
+
+	$ echo 'id=10 name=vincent data="{\"limit\":5000,\"offset\":30,\"table\":\"almanac\"}"' > /tmp/logfmt
+	$ cat /tmp/logfmt | lpretty -M --all data::json
+	{
+		"data": {
+			"limit": 5000,
+			"offset": 30,
+			"table": "almanac"
+		},
+		"id": "10",
+		"name": "vincent"
+	}
 
 Finally there's a third mode which strips the key of the first pair and only prints its value.
 This is useful when you pipe lpretty to the output of lcut.
 
 Examples:
 
-    $ echo 'id=10 name=vincent surname=Rischmann age=55' > /tmp/logfmt
-    $ cat /tmp/logfmt | lcut -v surname | lpretty -S
+	$ echo 'id=10 name=vincent surname=Rischmann age=55' > /tmp/logfmt
+	$ cat /tmp/logfmt | lcut -v surname | lpretty -S
 	Rischmann`,
 		RunE: runMain,
 	}
