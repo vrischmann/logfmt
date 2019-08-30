@@ -1,5 +1,11 @@
 # logfmt
 
+## Install
+
+    go get -u github.com/vrischmann/logfmt/cmd/lgrep
+    go get -u github.com/vrischmann/logfmt/cmd/lcut
+    go get -u github.com/vrischmann/logfmt/cmd/lpretty
+
 ## Library
 
 This package provides functions and types to work with logfmt log data.
