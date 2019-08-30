@@ -5,6 +5,7 @@
     go get -u github.com/vrischmann/logfmt/cmd/lgrep
     go get -u github.com/vrischmann/logfmt/cmd/lcut
     go get -u github.com/vrischmann/logfmt/cmd/lpretty
+    go get -u github.com/vrischmann/logfmt/cmd/lsort
 
 ## Library
 
@@ -20,6 +21,8 @@ Right now you can:
 The goal of logfmt is also to provide a couple of tools to easily parse and integrate log data into a Unix shell pipeline.
 
 Note this is not a definitive list, it's likely higher-level tools will be added later.
+
+Each tool is extensively documented, just call it with the `--help` flag.
 
 ### lgrep
 
@@ -61,3 +64,42 @@ The second mode merges the fields in a single JSON output per log line:
 
     lpretty -M name id            // returns an object with the name and id fields.
     lpretty -M name req::json     // returns an object with the name and the req field as an object instead of a string value.
+
+### lsort
+
+Sort the input lines based on a logfmt field.
+
+It can sort alphabetically:
+
+    $ cat data.txt
+    name=Vincent
+    name=John
+    name=Sophie
+    $ cat data.txt | lsort name
+    name=John
+    name=Sophie
+    name=Vincent
+
+Numerically:
+
+    $ cat data.txt
+    age=32 name=Vincent
+    age=100 name=Naomi
+    age=59 name=John
+    age=15 name=Sophie
+    $ cat data.txt | lsort name -n
+    age=15 name=Sophie
+    age=32 name=Vincent
+    age=59 name=John
+    age=100 name=Naomi
+
+Or by duration:
+
+    $ cat foobar.txt
+    elapsed=10m22s foo=bar
+    elapsed=3m bar=baz
+    elapsed=12s baz=qux
+    $ cat foobar.txt | lsort -d id
+    elapsed=12s baz=qux
+    elapsed=3m bar=baz
+    elapsed=10m22s foo=bar
