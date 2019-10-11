@@ -6,19 +6,19 @@ import (
 	"bufio"
 	"flag"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/vrischmann/logfmt"
 )
 
 func dictionaryWordGenerator() <-chan string {
 	f, err := os.Open("/usr/share/dict/words")
 	if err != nil {
-		logrus.Fatalf("can't find words. if you're on a Debian derivative install wfrench. err=%v", err)
+		log.Fatalf("can't find words. if you're on a Debian derivative install wfrench. err=%v", err)
 	}
 
 	words := make([]string, 0, 65536)
@@ -51,14 +51,14 @@ func makeOutputFile(filename string) *os.File {
 	if filename != "" {
 		f, err := os.Create(filename)
 		if err != nil {
-			logrus.Fatal(err)
+			log.Fatal(err)
 		}
 		return f
 	}
 
 	f, err := ioutil.TempFile("", "logfmt")
 	if err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 	}
 	return f
 }
@@ -82,7 +82,7 @@ func main() {
 	output := makeOutputFile(*flOutput)
 	defer output.Close()
 
-	logrus.Infof("output at %s", output.Name())
+	log.Printf("output at %s", output.Name())
 
 	//
 
@@ -109,7 +109,7 @@ func main() {
 
 		n, err := output.Write(buf)
 		if err != nil {
-			logrus.Fatal(err)
+			log.Fatal(err)
 		}
 		totalWritten += n
 

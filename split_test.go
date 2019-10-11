@@ -3,10 +3,10 @@ package logfmt
 import (
 	"bufio"
 	"io"
+	"log"
 	"os"
 	"testing"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -111,7 +111,7 @@ func BenchmarkSplitFile(b *testing.B) {
 
 	f, err := os.Open(dataFile)
 	if err != nil {
-		logrus.WithError(err).WithField("data-file", dataFile).Warn("unable to run benchmark because data file is not present")
+		log.Printf("unable to run benchmark because data file %q is not present. err: %v", dataFile, err)
 		b.Skip()
 	}
 

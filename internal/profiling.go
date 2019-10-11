@@ -1,11 +1,10 @@
 package internal
 
 import (
+	"log"
 	"os"
 	"runtime"
 	"runtime/pprof"
-
-	"github.com/sirupsen/logrus"
 )
 
 func StartProfiling(cpuProfile, memProfile string) func() {
@@ -16,10 +15,10 @@ func StartProfiling(cpuProfile, memProfile string) func() {
 	if cpuProfile != "" {
 		f, err := os.Create(cpuProfile)
 		if err != nil {
-			logrus.Fatal(err)
+			log.Fatal(err)
 		}
 		if err := pprof.StartCPUProfile(f); err != nil {
-			logrus.Fatal(err)
+			log.Fatal(err)
 		}
 	}
 
@@ -32,13 +31,13 @@ func StartProfiling(cpuProfile, memProfile string) func() {
 
 		f, err := os.Create(memProfile)
 		if err != nil {
-			logrus.Fatal(err)
+			log.Fatal(err)
 		}
 
 		runtime.GC()
 
 		if err := pprof.WriteHeapProfile(f); err != nil {
-			logrus.Fatal(err)
+			log.Fatal(err)
 		}
 
 		f.Close()

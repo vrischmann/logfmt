@@ -2,12 +2,12 @@ package main
 
 import (
 	"bufio"
+	"log"
 	"os"
 	"sort"
 	"strconv"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/vrischmann/logfmt"
 	"github.com/vrischmann/logfmt/internal"
@@ -31,12 +31,12 @@ func (s sortNumerical) Len() int { return len(s) }
 func (s sortNumerical) Less(i, j int) bool {
 	a, err := strconv.ParseInt(s[i].field, 10, 64)
 	if err != nil {
-		logrus.Fatalf("field %q is invalid for a numerical sort", s[i].field)
+		log.Fatalf("field %q is invalid for a numerical sort", s[i].field)
 	}
 
 	b, err := strconv.ParseInt(s[j].field, 10, 64)
 	if err != nil {
-		logrus.Fatalf("field %q is invalid for a numerical sort", s[j].field)
+		log.Fatalf("field %q is invalid for a numerical sort", s[j].field)
 	}
 
 	return a < b
@@ -49,12 +49,12 @@ func (s sortByDuration) Len() int { return len(s) }
 func (s sortByDuration) Less(i, j int) bool {
 	a, err := time.ParseDuration(s[i].field)
 	if err != nil {
-		logrus.Fatalf("field %q is invalid for a duration sort", s[i].field)
+		log.Fatalf("field %q is invalid for a duration sort", s[i].field)
 	}
 
 	b, err := time.ParseDuration(s[j].field)
 	if err != nil {
-		logrus.Fatalf("field %q is invalid for a duration sort", s[j].field)
+		log.Fatalf("field %q is invalid for a duration sort", s[j].field)
 	}
 
 	return a < b
