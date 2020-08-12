@@ -61,6 +61,24 @@ func (s sortByDuration) Less(i, j int) bool {
 }
 func (s sortByDuration) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
+type sortByTime []sortElement
+
+func (s sortByTime) Len() int { return len(s) }
+func (s sortByTime) Less(i, j int) bool {
+	a, err := time.Parse(time.RFC3339, s[i].field)
+	if err != nil {
+		log.Fatalf("field %q is invalid for a duration sort", s[i].field)
+	}
+
+	b, err := time.Parse(time.RFC3339, s[j].field)
+	if err != nil {
+		log.Fatalf("field %q is invalid for a duration sort", s[j].field)
+	}
+
+	return a.Before(b)
+}
+func (s sortByTime) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
 func getFromPairs(pairs logfmt.Pairs, key string) string {
 	for _, pair := range pairs {
 		if pair.Key == key {
@@ -115,6 +133,8 @@ func runMain(cmd *cobra.Command, args []string) error {
 		sl = sortNumerical(lines)
 	case flDurationSort:
 		sl = sortByDuration(lines)
+	case flTimeSort:
+		sl = sortByTime(lines)
 	default:
 		sl = sortAlphabetical(lines)
 	}
@@ -143,6 +163,7 @@ var (
 	flReverse      bool
 	flNumericSort  bool
 	flDurationSort bool
+	flTimeSort     bool
 
 	rootCmd = &cobra.Command{
 		Use:   "lsort [field]",
@@ -184,6 +205,19 @@ Duration sort:
 	elapsed=3m bar=baz
 	elapsed=10m22s foo=bar
 
+Time sort:
+
+    $ cat foobar.txt                                                                                                                                                                                                                                                   (staging/admin)
+    time=2020-08-12T23:01:04Z he=lo
+    time=2020-08-12T23:00:04Z bar=baz
+    time=2020-08-12T23:00:11Z baz=qux
+    time=2020-08-12T23:00:01Z foo=bar
+    $ cat foobar.txt | lsort -t time                                                                                                                                                                                                                                   (staging/admin)
+    time=2020-08-12T23:00:01Z foo=bar
+    time=2020-08-12T23:00:04Z bar=baz
+    time=2020-08-12T23:00:11Z baz=qux
+    time=2020-08-12T23:01:04Z he=lo
+
 Note: sorting is done in memory for now so be careful with your input data.`,
 		Args: cobra.ExactArgs(1),
 		RunE: runMain,
@@ -196,6 +230,7 @@ func init() {
 	fs.BoolVarP(&flReverse, "reverse", "v", false, "Reverse sort")
 	fs.BoolVarP(&flNumericSort, "numeric-sort", "n", false, "Use a numeric sort instead of a alphabetical sort")
 	fs.BoolVarP(&flDurationSort, "duration-sort", "d", false, "Use a duration sort instead of a alphabetical sort")
+	fs.BoolVarP(&flTimeSort, "time-sort", "t", false, "Use a time sort instead of a alphabetical sort")
 	fs.Var(&flags.MaxLineSize, "max-line-size", "Max size in bytes of a line")
 	fs.StringVar(&flags.CPUProfile, "cpu-profile", "", "Writes a CPU profile at `cpu-profile` after execution")
 	fs.StringVar(&flags.MemProfile, "mem-profile", "", "Writes a memory profile at `mem-profile` after execution")
