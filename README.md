@@ -1,5 +1,12 @@
 # logfmt
 
+## Status
+
+This repository is basically unmaintained because I don't use it anymore.
+
+I'll accept pull requests as long as they only help maintenance; I won't accept new features.
+This is because I think if you intend on developing this tool further you should fork it and take ownership of the entire project; since I'm not really interested in this project anymore I would only be a burden in this case :)
+
 ## Install
 
     go install github.com/vrischmann/logfmt/cmd/lgrep@latest
