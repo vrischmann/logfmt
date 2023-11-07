@@ -2,10 +2,10 @@
 
 ## Install
 
-    go get -u github.com/vrischmann/logfmt/cmd/lgrep
-    go get -u github.com/vrischmann/logfmt/cmd/lcut
-    go get -u github.com/vrischmann/logfmt/cmd/lpretty
-    go get -u github.com/vrischmann/logfmt/cmd/lsort
+    go install github.com/vrischmann/logfmt/cmd/lgrep@latest
+    go install github.com/vrischmann/logfmt/cmd/lcut@latest
+    go install github.com/vrischmann/logfmt/cmd/lpretty@latest
+    go install github.com/vrischmann/logfmt/cmd/lsort@latest
 
 ## Library
 
